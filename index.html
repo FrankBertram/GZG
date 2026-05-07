@@ -256,51 +256,64 @@
   // ============================================================
   // GOOGLE SHEETS SYNC
   // ============================================================
-  // Extracts spreadsheet ID + gid from a Google Sheets URL and
-  // returns the public CSV-export endpoint that supports CORS.
-  function buildGSheetCsvUrl(url) {
+  // Extracts spreadsheet ID + gid from a Google Sheets URL.
+  function parseSheetUrl(url) {
     const m = String(url).match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
     if (!m) return null;
     const id = m[1];
     const gMatch = String(url).match(/[?&#]gid=(\d+)/);
     const gid = gMatch ? gMatch[1] : '0';
-    return `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&gid=${gid}`;
+    return { id, gid };
   }
 
-  // Tries direct fetch first, then falls back via public CORS proxy.
-  // Google Sheets only sends Access-Control-Allow-Origin for sheets that have
-  // been "Published to web" — for normal "anyone with link" sheets we need the
-  // proxy.
-  async function fetchCsvWithFallback(csvUrl) {
+  // gviz JSON endpoint — reliable for sheets with multi-line cells, returns
+  // structured rows/cols and respects CORS for public sheets.
+  function buildGSheetJsonUrl(url) {
+    const p = parseSheetUrl(url);
+    return p ? `https://docs.google.com/spreadsheets/d/${p.id}/gviz/tq?tqx=out:json&gid=${p.gid}` : null;
+  }
+
+  // Try direct fetch, then via public CORS proxy as fallback.
+  async function fetchTextWithFallback(targetUrl) {
     try {
-      const res = await fetch(csvUrl);
+      const res = await fetch(targetUrl);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return await res.text();
     } catch (e) {
-      // Fallback via public CORS proxy
-      const proxied = 'https://corsproxy.io/?' + encodeURIComponent(csvUrl);
+      const proxied = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
       const res = await fetch(proxied);
       if (!res.ok) throw new Error('Proxy HTTP ' + res.status);
       return await res.text();
     }
   }
 
+  // The gviz JSON endpoint returns JSONP wrapped in a function call:
+  //   /*O_o*/google.visualization.Query.setResponse({...});
+  // We strip the wrapper to get the JSON payload.
+  function parseGvizJsonp(text) {
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('Unerwartetes Antwortformat');
+    return JSON.parse(text.substring(start, end + 1));
+  }
+
   async function syncFromGoogleSheets() {
     const url = state.sheetUrl;
     if (!url) { toast('Keine Sheet-URL hinterlegt. Bitte in den Einstellungen setzen.', 'error'); return; }
-    const csvUrl = buildGSheetCsvUrl(url);
-    if (!csvUrl) { toast('Ungültige Google-Sheets-URL.', 'error'); return; }
+    const jsonUrl = buildGSheetJsonUrl(url);
+    if (!jsonUrl) { toast('Ungültige Google-Sheets-URL.', 'error'); return; }
     toast('Synchronisiere…', 'info');
     try {
-      const text = await fetchCsvWithFallback(csvUrl);
-      const parsed = parseGZGCsv(text);
+      const text = await fetchTextWithFallback(jsonUrl);
+      const data = parseGvizJsonp(text);
+      const parsed = parseGZGJson(data);
       if (parsed.length === 0) throw new Error('Keine Datenzeilen gefunden');
       mergeGZG(parsed);
       setState({ lastSync: new Date().toISOString() });
       toast(`${parsed.length} GZG-Aktionen synchronisiert.`, 'success');
     } catch (e) {
       console.error(e);
-      toast('Sync fehlgeschlagen: ' + e.message + '. Tipp: CSV manuell von Google Sheets herunterladen und über "GZG-Liste → CSV laden" hochladen.', 'error');
+      toast('Sync fehlgeschlagen: ' + e.message + '. Tipp: CSV manuell laden über "GZG-Liste → CSV laden".', 'error');
     }
   }
 
@@ -321,23 +334,36 @@
     reader.readAsText(file, 'utf-8');
   }
 
-  // CSV parser supporting quoted cells and ; or , separators
-  function parseCsvLine(line, sep) {
-    const out = []; let cur = ''; let q = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (q) {
-        if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-        else if (c === '"') q = false;
-        else cur += c;
+  // Robust CSV parser that supports quoted cells with embedded newlines —
+  // the previous line-based parser broke on the GZG sheet where some cells
+  // contain multi-line product descriptions.
+  function parseCsv(text) {
+    if (text.charCodeAt(0) === 0xFEFF) text = text.substring(1);
+    const semi = (text.match(/;/g) || []).length;
+    const comma = (text.match(/,/g) || []).length;
+    const sep = semi > comma ? ';' : ',';
+
+    const rows = [];
+    let row = [];
+    let cell = '';
+    let inQuote = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuote) {
+        if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+        else if (c === '"') inQuote = false;
+        else cell += c;
       } else {
-        if (c === '"') q = true;
-        else if (c === sep) { out.push(cur); cur = ''; }
-        else cur += c;
+        if (c === '"') inQuote = true;
+        else if (c === sep) { row.push(cell); cell = ''; }
+        else if (c === '\r') { /* skip */ }
+        else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+        else cell += c;
       }
     }
-    out.push(cur);
-    return out;
+    if (cell !== '' || row.length > 0) { row.push(cell); rows.push(row); }
+    return rows;
   }
 
   // Parses a CSV from the GZG Google Sheet into normalized objects.
@@ -368,51 +394,99 @@
     agentur: 13,
   };
 
-  function parseGZGCsv(text) {
-    if (text.charCodeAt(0) === 0xFEFF) text = text.substring(1);
-    const lines = text.split(/\r?\n/).filter(l => l.length > 0);
-    if (lines.length < 2) return [];
-    const sep = (lines[0].split(';').length > lines[0].split(',').length) ? ';' : ',';
+  // Build a normalized GZG entry from raw column values.
+  // Used by both the JSON and CSV parsers.
+  function buildGzgEntry(values) {
+    const produkt = (values.produkt || '').trim();
+    if (!produkt) return null;
 
+    const aktionsseite = (values.aktionsseite || '').trim();
+    const einsendeschluss = (values.einsendeschluss || '').trim();
+    const aktionsende = (values.aktionsende || '').trim();
+
+    // Filter: rows without an Aktionsseite-Link are not real actions
+    // (notes, disclaimers, footer rows like 59-65).
+    // Also require at least one date to be present.
+    if (!aktionsseite || (!einsendeschluss && !aktionsende)) return null;
+
+    return {
+      produktname: produkt,
+      kontingent: (values.kontingent || '').trim() || null,
+      aktionsende: aktionsende || null,
+      einsendeschluss: einsendeschluss || null,
+      einreichungsfrist: (values.einreichungsfrist || '').trim() || null,
+      teilnahme: (values.teilnahme || '').trim() || null,
+      kaufbeleg: (values.kaufbeleg || '').trim() || null,
+      sms: /ja|yes/i.test((values.sms || '').trim()),
+      aktionsseite,
+      mydealzLink: (values.mydealz || '').trim() || null,
+      agentur: (values.agentur || '').trim() || null,
+      hersteller: extractHersteller(produkt),
+      cashbackBetrag: extractCashbackBetrag(produkt),
+    };
+  }
+
+  // Picks a useful string from a gviz cell. Prefer the formatted value `f`
+  // for dates (DD.MM.YYYY) and fall back to the raw value `v`.
+  function gvizCell(cell) {
+    if (!cell) return '';
+    if (cell.f != null && cell.f !== '') return String(cell.f).trim();
+    if (cell.v != null) return String(cell.v).trim();
+    return '';
+  }
+
+  function parseGZGJson(json) {
+    if (!json || !json.table || !Array.isArray(json.table.rows)) {
+      throw new Error('Ungültige Tabellen-Antwort');
+    }
     const c = GZG_COLS;
     const out = [];
     let skipped = 0;
-
-    // i=0 is the header row; data starts at i=1
-    for (let i = 1; i < lines.length; i++) {
-      const cells = parseCsvLine(lines[i], sep);
-      const produkt = (cells[c.produkt] || '').trim();
-      if (!produkt) continue;
-
-      const aktionsseite = (cells[c.aktionsseite] || '').trim();
-      const einsendeschluss = (cells[c.einsendeschluss] || '').trim();
-      const aktionsende = (cells[c.aktionsende] || '').trim();
-
-      // Filter: rows without an Aktionsseite-Link are not real actions
-      // (notes, disclaimers, footer rows like 59-65).
-      // Also require at least one date to be present.
-      if (!aktionsseite || (!einsendeschluss && !aktionsende)) {
-        skipped++;
-        continue;
-      }
-
-      out.push({
-        produktname: produkt,
-        kontingent: (cells[c.kontingent] || '').trim() || null,
-        aktionsende: aktionsende || null,
-        einsendeschluss: einsendeschluss || null,
-        einreichungsfrist: (cells[c.einreichungsfrist] || '').trim() || null,
-        teilnahme: (cells[c.teilnahme] || '').trim() || null,
-        kaufbeleg: (cells[c.kaufbeleg] || '').trim() || null,
-        sms: /ja|yes/i.test((cells[c.sms] || '').trim()),
-        aktionsseite,
-        mydealzLink: (cells[c.mydealz] || '').trim() || null,
-        agentur: (cells[c.agentur] || '').trim() || null,
-        hersteller: extractHersteller(produkt),
-        cashbackBetrag: extractCashbackBetrag(produkt),
+    for (const row of json.table.rows) {
+      const cells = row.c || [];
+      const entry = buildGzgEntry({
+        produkt: gvizCell(cells[c.produkt]),
+        kontingent: gvizCell(cells[c.kontingent]),
+        aktionsende: gvizCell(cells[c.aktionsende]),
+        einsendeschluss: gvizCell(cells[c.einsendeschluss]),
+        einreichungsfrist: gvizCell(cells[c.einreichungsfrist]),
+        teilnahme: gvizCell(cells[c.teilnahme]),
+        kaufbeleg: gvizCell(cells[c.kaufbeleg]),
+        sms: gvizCell(cells[c.sms]),
+        aktionsseite: gvizCell(cells[c.aktionsseite]),
+        mydealz: gvizCell(cells[c.mydealz]),
+        agentur: gvizCell(cells[c.agentur]),
       });
+      if (entry) out.push(entry); else skipped++;
     }
-    if (skipped > 0) console.info(`GZG-Parser: ${skipped} Zeilen übersprungen (keine Aktionsseite oder kein Datum).`);
+    if (skipped > 0) console.info(`GZG-Parser (JSON): ${skipped} Zeilen übersprungen.`);
+    return out;
+  }
+
+  function parseGZGCsv(text) {
+    const rows = parseCsv(text);
+    if (rows.length < 2) return [];
+    const c = GZG_COLS;
+    const out = [];
+    let skipped = 0;
+    for (let i = 1; i < rows.length; i++) {
+      const cells = rows[i];
+      const entry = buildGzgEntry({
+        produkt: cells[c.produkt],
+        kontingent: cells[c.kontingent],
+        aktionsende: cells[c.aktionsende],
+        einsendeschluss: cells[c.einsendeschluss],
+        einreichungsfrist: cells[c.einreichungsfrist],
+        teilnahme: cells[c.teilnahme],
+        kaufbeleg: cells[c.kaufbeleg],
+        sms: cells[c.sms],
+        aktionsseite: cells[c.aktionsseite],
+        mydealz: cells[c.mydealz],
+        agentur: cells[c.agentur],
+      });
+      if (entry) out.push(entry); else skipped++;
+    }
+    if (skipped > 0) console.info(`GZG-Parser (CSV): ${skipped} Zeilen übersprungen.`);
     return out;
   }
 
