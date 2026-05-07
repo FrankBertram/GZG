@@ -76,6 +76,7 @@
     .nav-link.active { background-color: #2563eb; color: white; }
 
     .bar { background: linear-gradient(180deg, #3b82f6, #2563eb); border-radius: 4px 4px 0 0; transition: height .3s; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .toast { animation: slideIn .2s ease-out; }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     .modal-enter { animation: fadeIn .15s ease-out; }
@@ -407,6 +408,40 @@
   function extractHersteller(produkt) {
     const m = String(produkt).match(/^([A-ZÄÖÜ][A-ZÄÖÜ0-9&'.\- ]{1,25})\s+\S/);
     return m ? m[1].trim() : null;
+  }
+
+  // Extracts a domain (without www.) from a URL string.
+  function extractDomain(url) {
+    if (!url) return null;
+    try {
+      const clean = String(url).trim();
+      const u = new URL(clean.startsWith('http') ? clean : 'https://' + clean);
+      return u.hostname.replace(/^www\./, '');
+    } catch { return null; }
+  }
+
+  // Google favicon service — works without CORS, returns a tiny brand icon.
+  function faviconUrl(domain, size = 64) {
+    if (!domain) return '';
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${size}`;
+  }
+
+  // Color avatar for items without a usable URL (deterministic by name)
+  function initialAvatar(name) {
+    const ch = (name && name[0] ? name[0] : '?').toUpperCase();
+    let h = 0;
+    for (let i = 0; i < (name || '').length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
+    return `<div class="w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-none shadow-sm" style="background: linear-gradient(135deg, hsl(${h},70%,55%), hsl(${(h+40)%360},70%,40%));">${esc(ch)}</div>`;
+  }
+
+  function logoForGzg(g) {
+    const dom = extractDomain(g.aktionsseite);
+    if (dom) {
+      return `<div class="w-14 h-14 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center flex-none shadow-sm overflow-hidden">
+        <img src="${faviconUrl(dom, 64)}" alt="" class="w-9 h-9" loading="lazy" onerror="this.parentElement.outerHTML=this.parentElement.dataset.fallback" data-fallback='${initialAvatar(g.hersteller || g.produktname).replace(/'/g, "&apos;")}' />
+      </div>`;
+    }
+    return initialAvatar(g.hersteller || g.produktname);
   }
 
   // Merge fresh entries into state.gzg by produktname (preserves importiert state).
@@ -822,10 +857,14 @@
                           dlBadge = `<span class="badge ${cls} ml-2">${txt}</span>`;
                         }
                       }
+                      const dom = extractDomain(a.aktionsseite);
+                      const tinyLogo = dom
+                        ? `<img src="${faviconUrl(dom, 32)}" alt="" class="w-5 h-5 rounded inline-block mr-2 align-middle" loading="lazy" onerror="this.style.display='none'" />`
+                        : '';
                       return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40">
                         <td class="px-4 py-3 font-medium">
-                          ${esc(a.produktname)}
-                          ${a.hersteller ? `<div class="text-xs text-slate-500">${esc(a.hersteller)}</div>` : ''}
+                          <div class="flex items-center">${tinyLogo}<span>${esc(a.produktname)}</span></div>
+                          ${a.hersteller ? `<div class="text-xs text-slate-500 ml-7">${esc(a.hersteller)}</div>` : ''}
                         </td>
                         <td class="px-4 py-3">${esc(a.kaufstaette || '–')}</td>
                         <td class="px-4 py-3">${fmtDate(a.kaufdatum)}</td>
@@ -921,55 +960,51 @@
             </div>
           </div>
         ` : `
-        <div class="card overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-              <thead class="bg-slate-50 dark:bg-slate-900">
-                <tr>
-                  <th class="w-10 px-4 py-3"><input type="checkbox" class="h-4 w-4 cursor-pointer" ${allSelected ? 'checked' : ''} data-action="toggleAll" /></th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Aktion</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Aktions-Ende</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Einsendeschluss</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Kontingent</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Agentur</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Vorschau</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-                ${items.length === 0
-                  ? `<tr><td colspan="7" class="p-12 text-center text-slate-500">Keine passenden Einträge.</td></tr>`
-                  : items.map(g => {
-                      const dl = daysUntil(g.einsendeschluss);
-                      let dlBadge = '';
-                      if (dl != null) {
-                        const cls = dl < 0 ? 'badge-warn' : dl <= 3 ? 'badge-warn' : dl <= 14 ? 'badge-soon' : '';
-                        if (cls) {
-                          const txt = dl < 0 ? `${Math.abs(dl)}d überfällig` : dl === 0 ? 'heute' : `noch ${dl}d`;
-                          dlBadge = ` <span class="badge ${cls}">${txt}</span>`;
-                        }
-                      }
-                      return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 ${state.importSelection.includes(g.id) ? 'bg-brand-50/30 dark:bg-blue-950/20' : ''}">
-                        <td class="px-4 py-3"><input type="checkbox" class="h-4 w-4 cursor-pointer" ${state.importSelection.includes(g.id) ? 'checked' : ''} data-action="toggleOne" data-id="${g.id}" /></td>
-                        <td class="px-4 py-3">
-                          <div class="font-medium">${esc(g.produktname)}</div>
-                          <div class="flex flex-wrap gap-2 mt-1 text-xs text-slate-500">
-                            ${g.hersteller ? `<span>${esc(g.hersteller)}</span>` : ''}
-                            ${g.cashbackBetrag ? `<span class="font-medium text-emerald-600 dark:text-emerald-400">${fmtCurrency(g.cashbackBetrag)}</span>` : ''}
-                          </div>
-                        </td>
-                        <td class="px-4 py-3 text-xs">${esc(g.aktionsende || '–')}</td>
-                        <td class="px-4 py-3 text-xs">${esc(g.einsendeschluss || '–')}${dlBadge}</td>
-                        <td class="px-4 py-3 text-xs">${esc(g.kontingent || '–')}</td>
-                        <td class="px-4 py-3 text-xs">${esc(g.agentur || '–')}</td>
-                        <td class="px-4 py-3 text-right">
-                          <button class="btn btn-ghost p-1.5" data-action="previewGzg" data-id="${g.id}">Details</button>
-                        </td>
-                      </tr>`;
-                    }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>`}
+        <div class="flex items-center justify-between text-sm text-slate-500 px-1">
+          <label class="inline-flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" class="h-4 w-4 cursor-pointer" ${allSelected ? 'checked' : ''} data-action="toggleAll" />
+            <span>Alle auswählen</span>
+          </label>
+        </div>
+        ${items.length === 0
+          ? `<div class="card p-12 text-center text-slate-500">Keine passenden Einträge.</div>`
+          : `<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              ${items.map(g => {
+                const dl = daysUntil(g.einsendeschluss);
+                let dlBadge = '';
+                if (dl != null) {
+                  const cls = dl < 0 ? 'badge-warn' : dl <= 3 ? 'badge-warn' : dl <= 14 ? 'badge-soon' : '';
+                  const txt = dl < 0 ? `${Math.abs(dl)}d überfällig` : dl === 0 ? 'heute!' : `noch ${dl}d`;
+                  dlBadge = `<span class="badge ${cls || 'badge-EINGEREICHT'}">${txt}</span>`;
+                }
+                const sel = state.importSelection.includes(g.id);
+                return `<div class="card p-4 flex flex-col gap-3 transition-shadow hover:shadow-md ${sel ? 'ring-2 ring-brand-500' : ''}">
+                  <div class="flex items-start gap-3">
+                    ${logoForGzg(g)}
+                    <div class="flex-1 min-w-0">
+                      <h3 class="font-semibold leading-snug line-clamp-2" title="${esc(g.produktname)}">${esc(g.produktname)}</h3>
+                      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs">
+                        ${g.hersteller ? `<span class="text-slate-500">${esc(g.hersteller)}</span>` : ''}
+                        ${g.cashbackBetrag ? `<span class="font-semibold text-emerald-600 dark:text-emerald-400">${fmtCurrency(g.cashbackBetrag)}</span>` : ''}
+                        ${dlBadge}
+                      </div>
+                    </div>
+                    <input type="checkbox" class="h-5 w-5 cursor-pointer mt-0.5 flex-none accent-blue-600" ${sel ? 'checked' : ''} data-action="toggleOne" data-id="${g.id}" />
+                  </div>
+                  <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                    ${g.aktionsende ? `<div><dt class="text-slate-400 inline">Ende:</dt> <dd class="font-medium inline">${esc(g.aktionsende)}</dd></div>` : ''}
+                    ${g.einsendeschluss ? `<div><dt class="text-slate-400 inline">Einsenden:</dt> <dd class="font-medium inline">${esc(g.einsendeschluss)}</dd></div>` : ''}
+                    ${g.kontingent && g.kontingent !== '-' ? `<div class="col-span-2"><dt class="text-slate-400 inline">Kontingent:</dt> <dd class="font-medium inline">${esc(g.kontingent)}</dd></div>` : ''}
+                    ${g.agentur ? `<div class="col-span-2"><dt class="text-slate-400 inline">Agentur:</dt> <dd class="font-medium inline">${esc(g.agentur)}</dd></div>` : ''}
+                  </dl>
+                  <div class="flex flex-wrap gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 mt-auto">
+                    ${g.aktionsseite ? `<a href="${esc(g.aktionsseite)}" target="_blank" rel="noopener" class="btn btn-secondary text-xs py-1 px-2">${I.link} Aktion</a>` : ''}
+                    ${g.mydealzLink ? `<a href="${esc(g.mydealzLink)}" target="_blank" rel="noopener" class="btn btn-secondary text-xs py-1 px-2">${I.link} mydealz</a>` : ''}
+                    <button class="btn btn-ghost text-xs py-1 px-2 ml-auto" data-action="previewGzg" data-id="${g.id}">Details →</button>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>`}`}
       </div>`;
   }
 
@@ -1098,12 +1133,16 @@
     const g = state.gzg.find(x => x.id === id);
     if (!g) return;
     const sel = state.importSelection.includes(id);
-    const linkBtn = (label, url) => url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="btn btn-secondary">${I.link} ${label}</a>` : '';
+    const linkBtn = (label, url, primary) => url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="btn ${primary ? 'btn-primary' : 'btn-secondary'}">${I.link} ${label}</a>` : '';
     const body = `
       <div class="space-y-4">
-        <div>
-          <h3 class="text-base font-semibold">${esc(g.produktname)}</h3>
-          ${g.hersteller ? `<p class="text-sm text-slate-500">${esc(g.hersteller)}</p>` : ''}
+        <div class="flex items-start gap-3">
+          ${logoForGzg(g)}
+          <div class="flex-1 min-w-0">
+            <h3 class="text-base font-semibold">${esc(g.produktname)}</h3>
+            ${g.hersteller ? `<p class="text-sm text-slate-500">${esc(g.hersteller)}</p>` : ''}
+            ${g.cashbackBetrag ? `<p class="text-base font-semibold text-emerald-600 dark:text-emerald-400 mt-1">${fmtCurrency(g.cashbackBetrag)} Cashback</p>` : ''}
+          </div>
         </div>
         <dl class="grid gap-3 sm:grid-cols-2 text-sm">
           ${g.cashbackBetrag ? `<div><dt class="text-xs font-medium text-slate-500">Cashback</dt><dd class="mt-1 font-semibold text-emerald-600 dark:text-emerald-400">${fmtCurrency(g.cashbackBetrag)}</dd></div>` : ''}
@@ -1116,14 +1155,14 @@
           ${g.agentur ? `<div><dt class="text-xs font-medium text-slate-500">Agentur</dt><dd class="mt-1 font-medium">${esc(g.agentur)}</dd></div>` : ''}
           <div><dt class="text-xs font-medium text-slate-500">SMS-Bestätigung</dt><dd class="mt-1 font-medium">${g.sms ? 'Ja' : 'Nein'}</dd></div>
         </dl>
-        <div class="flex flex-wrap gap-2">
-          ${linkBtn('Aktionsseite', g.aktionsseite)}
-          ${linkBtn('mydealz', g.mydealzLink)}
+        <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          ${linkBtn('Zur Aktionsseite', g.aktionsseite, true)}
+          ${linkBtn('mydealz-Post', g.mydealzLink)}
         </div>
       </div>
       <div class="mt-6 flex justify-end gap-2">
         ${!sel ? `<button class="btn btn-secondary" data-action="selectFromPreview" data-id="${id}">${I.check} Auswählen</button>` : ''}
-        <button class="btn btn-primary" data-action="modalCancel">Schließen</button>
+        <button class="btn btn-ghost" data-action="modalCancel">Schließen</button>
       </div>`;
     openModal({ title: 'GZG-Aktion', body, size: 'md' });
     document.querySelector('[data-action="modalCancel"]').addEventListener('click', closeModal);
