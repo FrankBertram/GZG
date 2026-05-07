@@ -341,66 +341,78 @@
   }
 
   // Parses a CSV from the GZG Google Sheet into normalized objects.
-  // Keys correspond to the German source columns.
+  //
+  // The mydealz-GZG sheet has a fixed column layout (verified against the
+  // source). We use FIXED positions because the heuristic header search was
+  // unreliable (e.g. "Zeitpunkt" in column D was being picked up as
+  // Aktions-ende, which is column E). Heuristics only kick in if the sheet
+  // structure changes in the future.
+  //
+  // Columns:
+  // A=0 Produktbild, B=1 Aktionsbeschreibung, C=2 Kontingent,
+  // D=3 Zeitpunkt, E=4 Aktions-ende, F=5 Einsendeschluss,
+  // G=6 Einreichungs-frist, H=7 Art der Teilnahme, I=8 Begründung,
+  // J=9 Art des Kaufbeleges, K=10 SMS Bestätigung, L=11 Aktionsseite,
+  // M=12 mydealz Link, N=13 abwickelnde Agentur
+  const GZG_COLS = {
+    produkt: 1,
+    kontingent: 2,
+    aktionsende: 4,
+    einsendeschluss: 5,
+    einreichungsfrist: 6,
+    teilnahme: 7,
+    kaufbeleg: 9,
+    sms: 10,
+    aktionsseite: 11,
+    mydealz: 12,
+    agentur: 13,
+  };
+
   function parseGZGCsv(text) {
     if (text.charCodeAt(0) === 0xFEFF) text = text.substring(1);
     const lines = text.split(/\r?\n/).filter(l => l.length > 0);
     if (lines.length < 2) return [];
     const sep = (lines[0].split(';').length > lines[0].split(',').length) ? ';' : ',';
-    const headers = parseCsvLine(lines[0], sep).map(h => h.trim().toLowerCase());
 
-    const find = (...names) => {
-      for (const n of names) {
-        const i = headers.findIndex(h => h.includes(n.toLowerCase()));
-        if (i !== -1) return i;
-      }
-      return -1;
-    };
-    const cols = {
-      produkt: find('aktionsbeschreibung', 'produktname', 'produktbild', 'produkt'),
-      kontingent: find('kontingent'),
-      aktionsende: find('aktions-ende', 'aktionsende', 'zeitpunkt', 'aktion-end'),
-      einsendeschluss: find('einsendeschluss', 'einsendung', 'einreichungsfrist'),
-      einreichungsfrist: find('einreichungs-frist', 'einreichungsfrist'),
-      teilnahme: find('art der teilnahme', 'teilnahme'),
-      kaufbeleg: find('art des kaufbeleges', 'kaufbeleg', 'beleg'),
-      sms: find('sms'),
-      aktionsseite: find('aktionsseite', 'link aktion', 'website'),
-      mydealz: find('mydealz'),
-      agentur: find('agentur', 'abwickelnde'),
-      hersteller: find('hersteller', 'marke'),
-      cashback: find('cashback', 'erstattung', 'betrag'),
-    };
-
-    if (cols.produkt === -1) {
-      throw new Error('Spalte "Aktionsbeschreibung" / "Produktname" nicht gefunden');
-    }
-
+    const c = GZG_COLS;
     const out = [];
+    let skipped = 0;
+
+    // i=0 is the header row; data starts at i=1
     for (let i = 1; i < lines.length; i++) {
-      const c = parseCsvLine(lines[i], sep);
-      const produkt = (c[cols.produkt] || '').trim();
+      const cells = parseCsvLine(lines[i], sep);
+      const produkt = (cells[c.produkt] || '').trim();
       if (!produkt) continue;
 
-      const cashbackText = cols.cashback !== -1 ? (c[cols.cashback] || '').trim() : '';
-      const cashbackBetrag = cashbackText ? extractCashbackBetrag(cashbackText) : extractCashbackBetrag(produkt);
+      const aktionsseite = (cells[c.aktionsseite] || '').trim();
+      const einsendeschluss = (cells[c.einsendeschluss] || '').trim();
+      const aktionsende = (cells[c.aktionsende] || '').trim();
+
+      // Filter: rows without an Aktionsseite-Link are not real actions
+      // (notes, disclaimers, footer rows like 59-65).
+      // Also require at least one date to be present.
+      if (!aktionsseite || (!einsendeschluss && !aktionsende)) {
+        skipped++;
+        continue;
+      }
 
       out.push({
         produktname: produkt,
-        kontingent: cols.kontingent !== -1 ? (c[cols.kontingent] || '').trim() : null,
-        aktionsende: cols.aktionsende !== -1 ? (c[cols.aktionsende] || '').trim() : null,
-        einsendeschluss: cols.einsendeschluss !== -1 ? (c[cols.einsendeschluss] || '').trim() : null,
-        einreichungsfrist: cols.einreichungsfrist !== -1 ? (c[cols.einreichungsfrist] || '').trim() : null,
-        teilnahme: cols.teilnahme !== -1 ? (c[cols.teilnahme] || '').trim() : null,
-        kaufbeleg: cols.kaufbeleg !== -1 ? (c[cols.kaufbeleg] || '').trim() : null,
-        sms: cols.sms !== -1 ? /ja|yes|y/i.test(c[cols.sms] || '') : false,
-        aktionsseite: cols.aktionsseite !== -1 ? (c[cols.aktionsseite] || '').trim() : null,
-        mydealzLink: cols.mydealz !== -1 ? (c[cols.mydealz] || '').trim() : null,
-        agentur: cols.agentur !== -1 ? (c[cols.agentur] || '').trim() : null,
-        hersteller: cols.hersteller !== -1 ? (c[cols.hersteller] || '').trim() : extractHersteller(produkt),
-        cashbackBetrag,
+        kontingent: (cells[c.kontingent] || '').trim() || null,
+        aktionsende: aktionsende || null,
+        einsendeschluss: einsendeschluss || null,
+        einreichungsfrist: (cells[c.einreichungsfrist] || '').trim() || null,
+        teilnahme: (cells[c.teilnahme] || '').trim() || null,
+        kaufbeleg: (cells[c.kaufbeleg] || '').trim() || null,
+        sms: /ja|yes/i.test((cells[c.sms] || '').trim()),
+        aktionsseite,
+        mydealzLink: (cells[c.mydealz] || '').trim() || null,
+        agentur: (cells[c.agentur] || '').trim() || null,
+        hersteller: extractHersteller(produkt),
+        cashbackBetrag: extractCashbackBetrag(produkt),
       });
     }
+    if (skipped > 0) console.info(`GZG-Parser: ${skipped} Zeilen übersprungen (keine Aktionsseite oder kein Datum).`);
     return out;
   }
 
@@ -444,19 +456,26 @@
     return initialAvatar(g.hersteller || g.produktname);
   }
 
-  // Merge fresh entries into state.gzg by produktname (preserves importiert state).
+  // Merge fresh entries into state.gzg by produktname.
+  // Preserves entries that have already been imported to a CashbackAktion
+  // (so the user doesn't lose tracking even if the source sheet changes).
+  // Drops stale non-imported entries that are no longer in the source.
   function mergeGZG(fresh) {
-    const newGzg = [...state.gzg];
+    const freshNames = new Set(fresh.map(f => f.produktname));
+    // 1. Keep imported entries even if they vanished from the source
+    // 2. Drop non-imported entries that are no longer in the source
+    let kept = state.gzg.filter(g => g.importiert || freshNames.has(g.produktname));
     let nextId = state.nextId.gzg;
     for (const f of fresh) {
-      const existing = newGzg.find(g => g.produktname === f.produktname);
+      const existing = kept.find(g => g.produktname === f.produktname);
       if (existing) {
-        Object.assign(existing, f);
+        // Update existing fields but preserve id and importiert flag
+        Object.assign(existing, f, { id: existing.id, importiert: existing.importiert });
       } else {
-        newGzg.push({ id: nextId++, ...f, importiert: false });
+        kept.push({ id: nextId++, ...f, importiert: false });
       }
     }
-    setState({ gzg: newGzg, nextId: { ...state.nextId, gzg: nextId } });
+    setState({ gzg: kept, nextId: { ...state.nextId, gzg: nextId } });
   }
 
   // ============================================================
