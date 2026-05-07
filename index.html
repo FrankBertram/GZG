@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Cashback" />
+  <title>GZG-Verwaltung</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8'/><path d='M12 18V6'/></svg>" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><circle cx='12' cy='12' r='10'/></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            brand: { 50:'#eff6ff', 100:'#dbeafe', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8' },
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    html, body { font-family: 'Inter', system-ui, sans-serif; }
+    body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+    input, select, textarea, button { font-size: 16px; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; transition: background-color .15s; cursor: pointer; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background-color: #2563eb; color: white; }
+    .btn-primary:hover:not(:disabled) { background-color: #1d4ed8; }
+    .btn-secondary { background-color: #e2e8f0; color: #1e293b; }
+    .btn-secondary:hover:not(:disabled) { background-color: #cbd5e1; }
+    .dark .btn-secondary { background-color: #1e293b; color: #f1f5f9; }
+    .dark .btn-secondary:hover:not(:disabled) { background-color: #334155; }
+    .btn-danger { background-color: #dc2626; color: white; }
+    .btn-danger:hover:not(:disabled) { background-color: #b91c1c; }
+    .btn-ghost { color: #475569; background: transparent; }
+    .btn-ghost:hover { background-color: #e2e8f0; }
+    .dark .btn-ghost { color: #cbd5e1; }
+    .dark .btn-ghost:hover { background-color: #1e293b; }
+
+    .input { width: 100%; border-radius: 0.5rem; border: 1px solid #cbd5e1; background-color: white; padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+    .input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
+    .dark .input { border-color: #334155; background-color: #0f172a; color: #f1f5f9; }
+
+    .card { border-radius: 0.75rem; border: 1px solid #e2e8f0; background-color: white; box-shadow: 0 1px 2px 0 rgba(0,0,0,.05); }
+    .dark .card { border-color: #1e293b; background-color: #0f172a; }
+
+    .badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 0.125rem 0.625rem; font-size: 0.75rem; font-weight: 500; }
+    .badge-OFFEN { background-color: #fef3c7; color: #92400e; }
+    .dark .badge-OFFEN { background-color: rgba(120,53,15,.4); color: #fcd34d; }
+    .badge-EINGEREICHT { background-color: #dbeafe; color: #1e40af; }
+    .dark .badge-EINGEREICHT { background-color: rgba(30,58,138,.4); color: #93c5fd; }
+    .badge-ERHALTEN { background-color: #d1fae5; color: #065f46; }
+    .dark .badge-ERHALTEN { background-color: rgba(6,78,59,.4); color: #6ee7b7; }
+    .badge-ABGELEHNT { background-color: #fee2e2; color: #991b1b; }
+    .dark .badge-ABGELEHNT { background-color: rgba(127,29,29,.4); color: #fca5a5; }
+    .badge-warn { background-color: #fee2e2; color: #991b1b; }
+    .dark .badge-warn { background-color: rgba(127,29,29,.4); color: #fca5a5; }
+    .badge-soon { background-color: #ffedd5; color: #9a3412; }
+    .dark .badge-soon { background-color: rgba(124,45,18,.4); color: #fdba74; }
+
+    .nav-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #64748b; flex: none; cursor: pointer; }
+    .nav-link:hover { background-color: #e2e8f0; }
+    .dark .nav-link { color: #94a3b8; }
+    .dark .nav-link:hover { background-color: #1e293b; }
+    .nav-link.active { background-color: #2563eb; color: white; }
+
+    .bar { background: linear-gradient(180deg, #3b82f6, #2563eb); border-radius: 4px 4px 0 0; transition: height .3s; }
+    .toast { animation: slideIn .2s ease-out; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .modal-enter { animation: fadeIn .15s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen">
+  <div id="app"></div>
+  <div id="modals"></div>
+  <div id="toasts" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+  <script>
+  // ============================================================
+  // CONSTANTS
+  // ============================================================
+  const STATUS_LIST = ['OFFEN', 'EINGEREICHT', 'ERHALTEN', 'ABGELEHNT'];
+  const STATUS_LABEL = { OFFEN: 'Offen', EINGEREICHT: 'Eingereicht', ERHALTEN: 'Erhalten', ABGELEHNT: 'Abgelehnt' };
+  const STORAGE_KEY = 'gzg_cashback_v2';
+  const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1wcqckNai9SyRbQLt-pj6FHzGM7sypoET9glyAE05u2E/edit?gid=2093940701';
+
+  // ============================================================
+  // ICONS
+  // ============================================================
+  const I = {
+    dashboard: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>',
+    table: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>',
+    download: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
+    chart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>',
+    sun: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>',
+    moon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
+    wallet: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>',
+    plus: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>',
+    pencil: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>',
+    trash: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>',
+    search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+    x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    filter: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
+    bell: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+    refresh: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>',
+    upload: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>',
+    arrowUp: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>',
+    arrowDown: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+    settings: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    link: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+    check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  };
+
+  // ============================================================
+  // STORAGE
+  // ============================================================
+  const Store = {
+    load() { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } },
+    save(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); },
+    reset() { localStorage.removeItem(STORAGE_KEY); },
+  };
+
+  // ============================================================
+  // STATE
+  // ============================================================
+  const initialState = {
+    route: 'dashboard',
+    theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+    sheetUrl: DEFAULT_SHEET_URL,
+    lastSync: null,
+    gzg: [],
+    aktionen: [],
+    nextId: { gzg: 1, aktion: 1 },
+    filter: { search: '', status: '', hersteller: '', kaufstaette: '', von: '', bis: '', sortBy: 'createdAt', sortDir: 'desc', page: 1, pageSize: 25 },
+    importSelection: [],
+    importSearch: '',
+    showFilter: false,
+  };
+
+  let state = (() => {
+    const s = Store.load();
+    if (!s) return initialState;
+    return { ...initialState, ...s };
+  })();
+
+  function persist() { Store.save(state); }
+  function setState(patch) { state = { ...state, ...patch }; persist(); render(); }
+
+  // ============================================================
+  // UTILS
+  // ============================================================
+  function fmtCurrency(v) {
+    if (v == null || isNaN(v)) return '–';
+    return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(v);
+  }
+  function fmtDate(s) {
+    if (!s) return '–';
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return s;
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+  function toInputDate(s) {
+    if (!s) return '';
+    const d = parseDate(s);
+    return d ? d.toISOString().substring(0, 10) : '';
+  }
+  // Parse DD.MM.YYYY or YYYY-MM-DD
+  function parseDate(s) {
+    if (!s) return null;
+    if (s instanceof Date) return s;
+    const str = String(s).trim();
+    if (!str) return null;
+    let m = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+    if (m) {
+      const day = parseInt(m[1], 10), month = parseInt(m[2], 10) - 1;
+      let year = parseInt(m[3], 10);
+      if (year < 100) year += 2000;
+      const d = new Date(year, month, day);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) {
+      const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function daysUntil(s) {
+    const d = parseDate(s);
+    if (!d) return null;
+    return Math.ceil((d.getTime() - Date.now()) / 86400000);
+  }
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  }
+
+  // Versucht Cashback-Betrag aus Beschreibung zu extrahieren
+  function extractCashbackBetrag(text) {
+    if (!text) return null;
+    const m = String(text).match(/(\d+[,.]\d{2}|\d+)\s*€/);
+    if (m) return parseFloat(m[1].replace(',', '.'));
+    return null;
+  }
+
+  // ============================================================
+  // TOAST & MODAL
+  // ============================================================
+  function toast(msg, type = 'info') {
+    const colors = {
+      success: 'bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-900',
+      error: 'bg-red-50 text-red-900 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900',
+      info: 'bg-white text-slate-900 border-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700',
+    };
+    const div = document.createElement('div');
+    div.className = `toast flex items-start gap-3 rounded-lg border px-4 py-3 shadow-lg ${colors[type]}`;
+    div.innerHTML = `<p class="flex-1 text-sm">${esc(msg)}</p>`;
+    document.getElementById('toasts').appendChild(div);
+    setTimeout(() => { div.style.opacity = '0'; div.style.transition = 'opacity .2s'; setTimeout(() => div.remove(), 200); }, 4000);
+  }
+
+  function openModal({ title, body, size = 'md' }) {
+    const sz = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' }[size];
+    const root = document.getElementById('modals');
+    root.innerHTML = `
+      <div class="modal-enter fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/50 sm:p-4 backdrop-blur-sm" data-modal-backdrop>
+        <div class="card w-full ${sz} max-h-[92vh] flex flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
+          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-3.5">
+            <h2 class="text-lg font-semibold">${esc(title)}</h2>
+            <button class="btn btn-ghost p-1.5" data-modal-close>${I.x}</button>
+          </div>
+          <div class="flex-1 overflow-y-auto p-5">${body}</div>
+        </div>
+      </div>`;
+    root.querySelector('[data-modal-backdrop]').addEventListener('click', e => { if (e.target.matches('[data-modal-backdrop]')) closeModal(); });
+    root.querySelector('[data-modal-close]').addEventListener('click', closeModal);
+  }
+  function closeModal() { document.getElementById('modals').innerHTML = ''; }
+
+  function applyTheme() { document.documentElement.classList.toggle('dark', state.theme === 'dark'); }
+
+  // ============================================================
+  // GOOGLE SHEETS SYNC
+  // ============================================================
+  // Extracts spreadsheet ID + gid from a Google Sheets URL and
+  // returns the public CSV-export endpoint that supports CORS.
+  function buildGSheetCsvUrl(url) {
+    const m = String(url).match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    if (!m) return null;
+    const id = m[1];
+    const gMatch = String(url).match(/[?&#]gid=(\d+)/);
+    const gid = gMatch ? gMatch[1] : '0';
+    return `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&gid=${gid}`;
+  }
+
+  // Tries direct fetch first, then falls back via public CORS proxy.
+  // Google Sheets only sends Access-Control-Allow-Origin for sheets that have
+  // been "Published to web" — for normal "anyone with link" sheets we need the
+  // proxy.
+  async function fetchCsvWithFallback(csvUrl) {
+    try {
+      const res = await fetch(csvUrl);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.text();
+    } catch (e) {
+      // Fallback via public CORS proxy
+      const proxied = 'https://corsproxy.io/?' + encodeURIComponent(csvUrl);
+      const res = await fetch(proxied);
+      if (!res.ok) throw new Error('Proxy HTTP ' + res.status);
+      return await res.text();
+    }
+  }
+
+  async function syncFromGoogleSheets() {
+    const url = state.sheetUrl;
+    if (!url) { toast('Keine Sheet-URL hinterlegt. Bitte in den Einstellungen setzen.', 'error'); return; }
+    const csvUrl = buildGSheetCsvUrl(url);
+    if (!csvUrl) { toast('Ungültige Google-Sheets-URL.', 'error'); return; }
+    toast('Synchronisiere…', 'info');
+    try {
+      const text = await fetchCsvWithFallback(csvUrl);
+      const parsed = parseGZGCsv(text);
+      if (parsed.length === 0) throw new Error('Keine Datenzeilen gefunden');
+      mergeGZG(parsed);
+      setState({ lastSync: new Date().toISOString() });
+      toast(`${parsed.length} GZG-Aktionen synchronisiert.`, 'success');
+    } catch (e) {
+      console.error(e);
+      toast('Sync fehlgeschlagen: ' + e.message + '. Tipp: CSV manuell von Google Sheets herunterladen und über "GZG-Liste → CSV laden" hochladen.', 'error');
+    }
+  }
+
+  // Imports a manually downloaded CSV file (same format as the Google Sheet)
+  function importCsvFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = parseGZGCsv(String(e.target.result));
+        if (parsed.length === 0) throw new Error('Keine Datenzeilen erkannt');
+        mergeGZG(parsed);
+        setState({ lastSync: new Date().toISOString() });
+        toast(`${parsed.length} GZG-Aktionen aus CSV geladen.`, 'success');
+      } catch (err) {
+        toast('CSV-Import fehlgeschlagen: ' + err.message, 'error');
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  // CSV parser supporting quoted cells and ; or , separators
+  function parseCsvLine(line, sep) {
+    const out = []; let cur = ''; let q = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) {
+        if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+        else if (c === '"') q = false;
+        else cur += c;
+      } else {
+        if (c === '"') q = true;
+        else if (c === sep) { out.push(cur); cur = ''; }
+        else cur += c;
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  // Parses a CSV from the GZG Google Sheet into normalized objects.
+  // Keys correspond to the German source columns.
+  function parseGZGCsv(text) {
+    if (text.charCodeAt(0) === 0xFEFF) text = text.substring(1);
+    const lines = text.split(/\r?\n/).filter(l => l.length > 0);
+    if (lines.length < 2) return [];
+    const sep = (lines[0].split(';').length > lines[0].split(',').length) ? ';' : ',';
+    const headers = parseCsvLine(lines[0], sep).map(h => h.trim().toLowerCase());
+
+    const find = (...names) => {
+      for (const n of names) {
+        const i = headers.findIndex(h => h.includes(n.toLowerCase()));
+        if (i !== -1) return i;
+      }
+      return -1;
+    };
+    const cols = {
+      produkt: find('aktionsbeschreibung', 'produktname', 'produktbild', 'produkt'),
+      kontingent: find('kontingent'),
+      aktionsende: find('aktions-ende', 'aktionsende', 'zeitpunkt', 'aktion-end'),
+      einsendeschluss: find('einsendeschluss', 'einsendung', 'einreichungsfrist'),
+      einreichungsfrist: find('einreichungs-frist', 'einreichungsfrist'),
+      teilnahme: find('art der teilnahme', 'teilnahme'),
+      kaufbeleg: find('art des kaufbeleges', 'kaufbeleg', 'beleg'),
+      sms: find('sms'),
+      aktionsseite: find('aktionsseite', 'link aktion', 'website'),
+      mydealz: find('mydealz'),
+      agentur: find('agentur', 'abwickelnde'),
+      hersteller: find('hersteller', 'marke'),
+      cashback: find('cashback', 'erstattung', 'betrag'),
+    };
+
+    if (cols.produkt === -1) {
+      throw new Error('Spalte "Aktionsbeschreibung" / "Produktname" nicht gefunden');
+    }
+
+    const out = [];
+    for (let i = 1; i < lines.length; i++) {
+      const c = parseCsvLine(lines[i], sep);
+      const produkt = (c[cols.produkt] || '').trim();
+      if (!produkt) continue;
+
+      const cashbackText = cols.cashback !== -1 ? (c[cols.cashback] || '').trim() : '';
+      const cashbackBetrag = cashbackText ? extractCashbackBetrag(cashbackText) : extractCashbackBetrag(produkt);
+
+      out.push({
+        produktname: produkt,
+        kontingent: cols.kontingent !== -1 ? (c[cols.kontingent] || '').trim() : null,
+        aktionsende: cols.aktionsende !== -1 ? (c[cols.aktionsende] || '').trim() : null,
+        einsendeschluss: cols.einsendeschluss !== -1 ? (c[cols.einsendeschluss] || '').trim() : null,
+        einreichungsfrist: cols.einreichungsfrist !== -1 ? (c[cols.einreichungsfrist] || '').trim() : null,
+        teilnahme: cols.teilnahme !== -1 ? (c[cols.teilnahme] || '').trim() : null,
+        kaufbeleg: cols.kaufbeleg !== -1 ? (c[cols.kaufbeleg] || '').trim() : null,
+        sms: cols.sms !== -1 ? /ja|yes|y/i.test(c[cols.sms] || '') : false,
+        aktionsseite: cols.aktionsseite !== -1 ? (c[cols.aktionsseite] || '').trim() : null,
+        mydealzLink: cols.mydealz !== -1 ? (c[cols.mydealz] || '').trim() : null,
+        agentur: cols.agentur !== -1 ? (c[cols.agentur] || '').trim() : null,
+        hersteller: cols.hersteller !== -1 ? (c[cols.hersteller] || '').trim() : extractHersteller(produkt),
+        cashbackBetrag,
+      });
+    }
+    return out;
+  }
+
+  // Heuristic: many GZG entries start with the brand in CAPS.
+  function extractHersteller(produkt) {
+    const m = String(produkt).match(/^([A-ZÄÖÜ][A-ZÄÖÜ0-9&'.\- ]{1,25})\s+\S/);
+    return m ? m[1].trim() : null;
+  }
+
+  // Merge fresh entries into state.gzg by produktname (preserves importiert state).
+  function mergeGZG(fresh) {
+    const newGzg = [...state.gzg];
+    let nextId = state.nextId.gzg;
+    for (const f of fresh) {
+      const existing = newGzg.find(g => g.produktname === f.produktname);
+      if (existing) {
+        Object.assign(existing, f);
+      } else {
+        newGzg.push({ id: nextId++, ...f, importiert: false });
+      }
+    }
+    setState({ gzg: newGzg, nextId: { ...state.nextId, gzg: nextId } });
+  }
+
+  // ============================================================
+  // CASHBACK / IMPORT
+  // ============================================================
+  function isDuplicate(g) {
+    return state.aktionen.some(a => a.gzgId === g.id || a.produktname === g.produktname);
+  }
+
+  function importGZG(ids) {
+    let imported = 0, skipped = 0;
+    const newGzg = state.gzg.map(g => ({ ...g }));
+    const newAktionen = [...state.aktionen];
+    let next = state.nextId.aktion;
+
+    for (const id of ids) {
+      const g = newGzg.find(x => x.id === id);
+      if (!g || g.importiert) { skipped++; continue; }
+      if (isDuplicate(g)) { g.importiert = true; skipped++; continue; }
+
+      newAktionen.push({
+        id: next++,
+        produktname: g.produktname,
+        hersteller: g.hersteller || null,
+        cashbackBetrag: g.cashbackBetrag ?? 0,
+        kaufstaette: null,
+        kaufdatum: null,
+        teilnahmedatum: null,
+        cashbackErhaltenAm: null,
+        einsendeschluss: g.einsendeschluss || null,
+        aktionsende: g.aktionsende || null,
+        aktionsseite: g.aktionsseite || null,
+        mydealzLink: g.mydealzLink || null,
+        agentur: g.agentur || null,
+        belegnummer: null,
+        teilnahme: g.teilnahme || null,
+        kaufbeleg: g.kaufbeleg || null,
+        status: 'OFFEN',
+        bemerkungen: null,
+        gzgId: g.id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      g.importiert = true;
+      imported++;
+    }
+    setState({ gzg: newGzg, aktionen: newAktionen, nextId: { ...state.nextId, aktion: next }, importSelection: [] });
+    if (imported > 0) toast(`${imported} Aktion${imported === 1 ? '' : 'en'} importiert.`, 'success');
+    if (skipped > 0) toast(`${skipped} übersprungen (Duplikate).`, 'info');
+  }
+
+  function saveAktion(values, id) {
+    const data = {
+      produktname: values.produktname.trim(),
+      hersteller: values.hersteller.trim() || null,
+      cashbackBetrag: parseFloat(String(values.cashbackBetrag).replace(',', '.')) || 0,
+      kaufstaette: values.kaufstaette.trim() || null,
+      kaufdatum: values.kaufdatum || null,
+      teilnahmedatum: values.teilnahmedatum || null,
+      cashbackErhaltenAm: values.cashbackErhaltenAm || null,
+      einsendeschluss: values.einsendeschluss || null,
+      aktionsende: values.aktionsende || null,
+      aktionsseite: values.aktionsseite.trim() || null,
+      mydealzLink: values.mydealzLink.trim() || null,
+      agentur: values.agentur.trim() || null,
+      belegnummer: values.belegnummer.trim() || null,
+      status: values.status,
+      bemerkungen: values.bemerkungen.trim() || null,
+    };
+    if (id != null) {
+      setState({ aktionen: state.aktionen.map(a => a.id === id ? { ...a, ...data, updatedAt: new Date().toISOString() } : a) });
+      toast('Aktion aktualisiert.', 'success');
+    } else {
+      const a = { id: state.nextId.aktion, gzgId: null, teilnahme: null, kaufbeleg: null, ...data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      setState({ aktionen: [...state.aktionen, a], nextId: { ...state.nextId, aktion: state.nextId.aktion + 1 } });
+      toast('Aktion angelegt.', 'success');
+    }
+    closeModal();
+  }
+
+  function deleteAktion(id) {
+    const a = state.aktionen.find(x => x.id === id);
+    if (!a) return;
+    let newGzg = state.gzg;
+    if (a.gzgId) newGzg = state.gzg.map(g => g.id === a.gzgId ? { ...g, importiert: false } : g);
+    setState({ aktionen: state.aktionen.filter(x => x.id !== id), gzg: newGzg });
+    closeModal();
+    toast('Aktion gelöscht.', 'success');
+  }
+
+  // ============================================================
+  // FILTER / STATS
+  // ============================================================
+  function getFiltered() {
+    let items = [...state.aktionen];
+    const f = state.filter;
+    if (f.search) {
+      const s = f.search.toLowerCase();
+      items = items.filter(a =>
+        a.produktname.toLowerCase().includes(s) ||
+        (a.bemerkungen || '').toLowerCase().includes(s) ||
+        (a.hersteller || '').toLowerCase().includes(s) ||
+        (a.kaufstaette || '').toLowerCase().includes(s)
+      );
+    }
+    if (f.status) items = items.filter(a => a.status === f.status);
+    if (f.hersteller) items = items.filter(a => a.hersteller === f.hersteller);
+    if (f.kaufstaette) items = items.filter(a => a.kaufstaette === f.kaufstaette);
+    if (f.von) items = items.filter(a => a.kaufdatum && a.kaufdatum >= f.von);
+    if (f.bis) items = items.filter(a => a.kaufdatum && a.kaufdatum <= f.bis);
+    items.sort((a, b) => {
+      const av = a[f.sortBy], bv = b[f.sortBy];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return f.sortDir === 'asc' ? cmp : -cmp;
+    });
+    return items;
+  }
+  function r2(n) { return Math.round(n * 100) / 100; }
+  function getStats() {
+    const items = state.aktionen;
+    const sumBy = (s) => items.filter(i => i.status === s).reduce((sum, i) => sum + (i.cashbackBetrag || 0), 0);
+    const cnt = (s) => items.filter(i => i.status === s).length;
+    return {
+      anzahl: { gesamt: items.length, offen: cnt('OFFEN'), eingereicht: cnt('EINGEREICHT'), erhalten: cnt('ERHALTEN'), abgelehnt: cnt('ABGELEHNT') },
+      summen: { gesamt: r2(items.reduce((s, i) => s + (i.cashbackBetrag || 0), 0)), offen: r2(sumBy('OFFEN')), eingereicht: r2(sumBy('EINGEREICHT')), erhalten: r2(sumBy('ERHALTEN')), ausstehend: r2(sumBy('OFFEN') + sumBy('EINGEREICHT')) },
+    };
+  }
+  function getReminders() {
+    return state.aktionen.filter(a => a.status === 'OFFEN' || a.status === 'EINGEREICHT')
+      .map(a => ({ ...a, daysLeft: daysUntil(a.einsendeschluss) }))
+      .filter(a => a.daysLeft != null && a.daysLeft <= 14)
+      .sort((a, b) => a.daysLeft - b.daysLeft);
+  }
+  function getMonthStats() {
+    const map = new Map();
+    for (const a of state.aktionen) {
+      const ref = a.cashbackErhaltenAm || a.kaufdatum || a.createdAt;
+      const key = (ref || '').substring(0, 7);
+      if (!key) continue;
+      map.set(key, (map.get(key) || 0) + (a.cashbackBetrag || 0));
+    }
+    return Array.from(map.entries()).sort().map(([m, b]) => ({ monat: m, betrag: r2(b) }));
+  }
+  function getHerstellerStats() {
+    const map = new Map();
+    for (const a of state.aktionen) {
+      const k = a.hersteller || 'Unbekannt';
+      const cur = map.get(k) || { betrag: 0, anzahl: 0 };
+      cur.betrag += a.cashbackBetrag || 0; cur.anzahl++;
+      map.set(k, cur);
+    }
+    return Array.from(map.entries()).map(([h, v]) => ({ hersteller: h, betrag: r2(v.betrag), anzahl: v.anzahl })).sort((a, b) => b.betrag - a.betrag);
+  }
+  function uniqueValues(field) {
+    const set = new Set();
+    state.aktionen.forEach(a => { if (a[field]) set.add(a[field]); });
+    state.gzg.forEach(g => { if (g[field]) set.add(g[field]); });
+    return Array.from(set).sort();
+  }
+
+  // ============================================================
+  // CSV Export
+  // ============================================================
+  function exportCSV() {
+    const rows = [
+      ['ID', 'Produkt', 'Hersteller', 'Kaufstätte', 'Kaufdatum', 'Teilnahmedatum', 'Cashback', 'Cashback erhalten am', 'Einsendeschluss', 'Aktionsende', 'Belegnummer', 'Agentur', 'Aktionsseite', 'mydealz', 'Status', 'Bemerkungen'],
+      ...state.aktionen.map(i => [i.id, i.produktname, i.hersteller || '', i.kaufstaette || '', i.kaufdatum || '', i.teilnahmedatum || '', i.cashbackBetrag, i.cashbackErhaltenAm || '', i.einsendeschluss || '', i.aktionsende || '', i.belegnummer || '', i.agentur || '', i.aktionsseite || '', i.mydealzLink || '', i.status, i.bemerkungen || '']),
+    ];
+    const csv = '﻿' + rows.map(r => r.map(c => {
+      const s = String(c);
+      return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(';')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `gzg-aktionen-${new Date().toISOString().substring(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  // ============================================================
+  // SHELL / NAV
+  // ============================================================
+  const NAV = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { id: 'aktionen', label: 'Aktionen', icon: 'table' },
+    { id: 'import', label: 'GZG-Liste', icon: 'download' },
+    { id: 'statistiken', label: 'Statistiken', icon: 'chart' },
+  ];
+
+  function renderShell(content) {
+    const remCount = getReminders().length;
+    return `
+      <div class="min-h-screen flex flex-col">
+        <header class="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur">
+          <div class="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-brand-600">${I.wallet}</span>
+              <span class="text-lg font-semibold">GZG-Verwaltung</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button class="btn btn-ghost p-2" data-action="sync" title="Aus Google Sheets synchronisieren">${I.refresh}</button>
+              <button class="btn btn-ghost p-2" data-action="settings" title="Einstellungen">${I.settings}</button>
+              <button class="btn btn-ghost p-2" data-action="toggleTheme" title="Theme">${state.theme === 'dark' ? I.sun : I.moon}</button>
+            </div>
+          </div>
+          <nav class="mx-auto max-w-7xl px-2 sm:px-6 pb-2 flex gap-1 overflow-x-auto">
+            ${NAV.map(n => `<button class="nav-link ${state.route === n.id ? 'active' : ''}" data-action="navigate" data-route="${n.id}">${I[n.icon]}${n.label}${n.id === 'dashboard' && remCount > 0 ? `<span class="ml-1 inline-flex items-center justify-center bg-red-500 text-white rounded-full text-xs px-1.5 min-w-[1.25rem]">${remCount}</span>` : ''}</button>`).join('')}
+          </nav>
+        </header>
+        <main class="mx-auto max-w-7xl w-full flex-1 px-4 sm:px-6 py-6">${content}</main>
+        <footer class="border-t border-slate-200 dark:border-slate-800 py-3 text-center text-xs text-slate-500">
+          ${state.lastSync ? `Letzte Synchronisation: ${new Date(state.lastSync).toLocaleString('de-DE')}` : 'Noch nicht synchronisiert.'}
+          · Daten lokal im Browser
+        </footer>
+      </div>`;
+  }
+
+  // ============================================================
+  // RENDER: DASHBOARD
+  // ============================================================
+  function renderDashboard() {
+    const s = getStats();
+    const reminders = getReminders().slice(0, 8);
+    const cards = [
+      { label: 'Offen', v: s.anzahl.offen, sub: fmtCurrency(s.summen.offen), c: 'bg-amber-500', i: '⏳' },
+      { label: 'Eingereicht', v: s.anzahl.eingereicht, sub: fmtCurrency(s.summen.eingereicht), c: 'bg-blue-500', i: '📨' },
+      { label: 'Erhalten', v: s.anzahl.erhalten, sub: fmtCurrency(s.summen.erhalten), c: 'bg-emerald-500', i: '✓' },
+      { label: 'Gesamt', v: s.anzahl.gesamt, sub: fmtCurrency(s.summen.gesamt), c: 'bg-brand-600', i: '💰' },
+    ];
+
+    const empty = state.gzg.length === 0;
+
+    return `
+      <div class="space-y-6">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 class="text-2xl font-bold">Dashboard</h1>
+            <p class="text-sm text-slate-500">Geld-zurück-Garantie-Aktionen.</p>
+          </div>
+          <button class="btn btn-primary" data-action="sync">${I.refresh} Synchronisieren</button>
+        </div>
+
+        ${empty ? `
+          <div class="card p-6 text-center space-y-3">
+            <p class="text-base">Noch keine GZG-Aktionen geladen.</p>
+            <p class="text-sm text-slate-500">Klicke auf <strong>Synchronisieren</strong>, um die Liste aus dem Google Sheet zu laden.</p>
+            <button class="btn btn-primary mx-auto" data-action="sync">${I.refresh} Jetzt synchronisieren</button>
+          </div>` : ''}
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          ${cards.map(c => `
+            <div class="card p-5 flex items-center gap-4">
+              <div class="rounded-lg p-3 text-white text-xl ${c.c}">${c.i}</div>
+              <div>
+                <p class="text-xs uppercase tracking-wide text-slate-500">${c.label}</p>
+                <p class="text-2xl font-bold">${c.v}</p>
+                <p class="text-sm text-slate-500">${c.sub}</p>
+              </div>
+            </div>`).join('')}
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-2">
+          <div class="card p-5">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="flex items-center gap-2 font-semibold"><span class="text-amber-500">${I.bell}</span>Bald ablaufend (≤14 Tage)</h2>
+              <button class="text-sm text-brand-600 hover:underline" data-action="navigate" data-route="aktionen">Alle →</button>
+            </div>
+            ${reminders.length === 0
+              ? '<p class="text-sm text-slate-500">Alles im grünen Bereich. 🎉</p>'
+              : `<ul class="space-y-2">${reminders.map(r => {
+                  const cls = r.daysLeft < 0 ? 'badge-warn' : r.daysLeft <= 3 ? 'badge-warn' : 'badge-soon';
+                  const txt = r.daysLeft < 0 ? `${Math.abs(r.daysLeft)} Tage überfällig` : r.daysLeft === 0 ? 'Heute!' : `noch ${r.daysLeft} Tage`;
+                  return `<li class="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 gap-2">
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium truncate">${esc(r.produktname)}</p>
+                      <p class="text-xs text-slate-500">Einsendeschluss: ${fmtDate(r.einsendeschluss)} · ${fmtCurrency(r.cashbackBetrag)}</p>
+                    </div>
+                    <span class="badge ${cls} flex-none">${txt}</span>
+                  </li>`;
+                }).join('')}</ul>`}
+          </div>
+
+          <div class="card p-5">
+            <h2 class="mb-4 font-semibold">Schnellzugriff</h2>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <button class="btn btn-primary justify-center" data-action="navigate" data-route="import">${I.download} GZG-Liste öffnen</button>
+              <button class="btn btn-secondary justify-center" data-action="navigate" data-route="aktionen">Meine Aktionen</button>
+              <button class="btn btn-secondary justify-center" data-action="navigate" data-route="statistiken">Statistiken</button>
+              <button class="btn btn-secondary justify-center" data-action="exportCSV">${I.download} CSV-Export</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ============================================================
+  // RENDER: AKTIONEN (meine Cashback-Liste)
+  // ============================================================
+  function renderAktionen() {
+    const items = getFiltered();
+    const f = state.filter;
+    const total = items.length;
+    const totalPages = Math.max(1, Math.ceil(total / f.pageSize));
+    const page = Math.min(f.page, totalPages);
+    const pageItems = items.slice((page - 1) * f.pageSize, page * f.pageSize);
+    const activeFilters = ['status', 'hersteller', 'kaufstaette', 'von', 'bis'].filter(k => f[k]).length;
+    const sortIcon = (col) => f.sortBy === col ? (f.sortDir === 'asc' ? I.arrowUp : I.arrowDown) : '';
+
+    return `
+      <div class="space-y-4">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 class="text-2xl font-bold">Meine Aktionen</h1>
+            <p class="text-sm text-slate-500">${total} Einträge</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-secondary" data-action="exportCSV">${I.download} CSV</button>
+            <button class="btn btn-primary" data-action="newAktion">${I.plus} Neu</button>
+          </div>
+        </div>
+
+        <div class="card p-4 space-y-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative flex-1 min-w-[220px]">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${I.search}</span>
+              <input class="input pl-9" placeholder="Suche..." value="${esc(f.search)}" data-action="search-input" />
+              ${f.search ? `<button class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400" data-action="clearSearch">${I.x}</button>` : ''}
+            </div>
+            <button class="btn btn-secondary relative" data-action="toggleFilter">
+              ${I.filter} Filter
+              ${activeFilters > 0 ? `<span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-xs text-white">${activeFilters}</span>` : ''}
+            </button>
+          </div>
+          ${state.showFilter ? `
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-200 dark:border-slate-800 pt-3">
+              <label class="block">
+                <span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Status</span>
+                <select class="input" data-action="filter" data-key="status">
+                  <option value="">Alle</option>
+                  ${STATUS_LIST.map(s => `<option value="${s}" ${f.status === s ? 'selected' : ''}>${STATUS_LABEL[s]}</option>`).join('')}
+                </select>
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Hersteller</span>
+                <select class="input" data-action="filter" data-key="hersteller">
+                  <option value="">Alle</option>
+                  ${uniqueValues('hersteller').map(h => `<option value="${esc(h)}" ${f.hersteller === h ? 'selected' : ''}>${esc(h)}</option>`).join('')}
+                </select>
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Kaufstätte</span>
+                <select class="input" data-action="filter" data-key="kaufstaette">
+                  <option value="">Alle</option>
+                  ${uniqueValues('kaufstaette').map(k => `<option value="${esc(k)}" ${f.kaufstaette === k ? 'selected' : ''}>${esc(k)}</option>`).join('')}
+                </select>
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="block">
+                  <span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Von</span>
+                  <input type="date" class="input" value="${f.von}" data-action="filter" data-key="von" />
+                </label>
+                <label class="block">
+                  <span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Bis</span>
+                  <input type="date" class="input" value="${f.bis}" data-action="filter" data-key="bis" />
+                </label>
+              </div>
+              ${activeFilters > 0 ? `<button class="btn btn-ghost self-end justify-self-start" data-action="resetFilter">Filter zurücksetzen</button>` : ''}
+            </div>` : ''}
+        </div>
+
+        <div class="card overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-slate-50 dark:bg-slate-900">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 cursor-pointer" data-action="sort" data-col="produktname"><span class="inline-flex items-center gap-1">Produkt ${sortIcon('produktname')}</span></th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Kaufstätte</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 cursor-pointer" data-action="sort" data-col="kaufdatum"><span class="inline-flex items-center gap-1">Kaufdatum ${sortIcon('kaufdatum')}</span></th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 cursor-pointer" data-action="sort" data-col="einsendeschluss"><span class="inline-flex items-center gap-1">Einsendeschluss ${sortIcon('einsendeschluss')}</span></th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 cursor-pointer" data-action="sort" data-col="cashbackBetrag"><span class="inline-flex items-center gap-1 justify-end w-full">Cashback ${sortIcon('cashbackBetrag')}</span></th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 cursor-pointer" data-action="sort" data-col="status"><span class="inline-flex items-center gap-1">Status ${sortIcon('status')}</span></th>
+                  <th class="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                ${pageItems.length === 0
+                  ? `<tr><td colspan="7" class="p-12 text-center text-slate-500">Keine Aktionen gefunden.</td></tr>`
+                  : pageItems.map(a => {
+                      const dl = daysUntil(a.einsendeschluss);
+                      let dlBadge = '';
+                      if (dl != null && (a.status === 'OFFEN' || a.status === 'EINGEREICHT')) {
+                        const cls = dl < 0 ? 'badge-warn' : dl <= 3 ? 'badge-warn' : dl <= 14 ? 'badge-soon' : '';
+                        if (cls) {
+                          const txt = dl < 0 ? `-${Math.abs(dl)}d` : dl === 0 ? 'heute' : `${dl}d`;
+                          dlBadge = `<span class="badge ${cls} ml-2">${txt}</span>`;
+                        }
+                      }
+                      return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40">
+                        <td class="px-4 py-3 font-medium">
+                          ${esc(a.produktname)}
+                          ${a.hersteller ? `<div class="text-xs text-slate-500">${esc(a.hersteller)}</div>` : ''}
+                        </td>
+                        <td class="px-4 py-3">${esc(a.kaufstaette || '–')}</td>
+                        <td class="px-4 py-3">${fmtDate(a.kaufdatum)}</td>
+                        <td class="px-4 py-3">${fmtDate(a.einsendeschluss)}${dlBadge}</td>
+                        <td class="px-4 py-3 text-right tabular-nums">${fmtCurrency(a.cashbackBetrag)}</td>
+                        <td class="px-4 py-3"><span class="badge badge-${a.status}">${STATUS_LABEL[a.status]}</span></td>
+                        <td class="px-4 py-3 text-right">
+                          <div class="flex justify-end gap-1">
+                            <button class="btn btn-ghost p-1.5" data-action="editAktion" data-id="${a.id}">${I.pencil}</button>
+                            <button class="btn btn-ghost p-1.5 text-red-600" data-action="deleteAktion" data-id="${a.id}">${I.trash}</button>
+                          </div>
+                        </td>
+                      </tr>`;
+                    }).join('')}
+              </tbody>
+            </table>
+          </div>
+          ${totalPages > 1 ? `
+            <div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 px-4 py-3 text-sm">
+              <p class="text-slate-500">Seite ${page} von ${totalPages}</p>
+              <div class="flex gap-1">
+                <button class="btn btn-ghost" ${page <= 1 ? 'disabled' : ''} data-action="page" data-dir="-1">Zurück</button>
+                <button class="btn btn-ghost" ${page >= totalPages ? 'disabled' : ''} data-action="page" data-dir="1">Weiter</button>
+              </div>
+            </div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  // ============================================================
+  // RENDER: GZG-LISTE (Import)
+  // ============================================================
+  function renderImport() {
+    let items = state.gzg.filter(g => !g.importiert);
+    if (state.importSearch) {
+      const s = state.importSearch.toLowerCase();
+      items = items.filter(g =>
+        g.produktname.toLowerCase().includes(s) ||
+        (g.hersteller || '').toLowerCase().includes(s) ||
+        (g.agentur || '').toLowerCase().includes(s)
+      );
+    }
+    items.sort((a, b) => {
+      const da = parseDate(a.einsendeschluss);
+      const db = parseDate(b.einsendeschluss);
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da - db;
+    });
+
+    const allSelected = items.length > 0 && items.every(i => state.importSelection.includes(i.id));
+
+    return `
+      <div class="space-y-4">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 class="text-2xl font-bold">GZG-Liste</h1>
+            <p class="text-sm text-slate-500">${items.length} verfügbare Aktionen · sortiert nach Einsendeschluss</p>
+          </div>
+          <div class="flex gap-2">
+            <label class="btn btn-secondary cursor-pointer">${I.upload} CSV laden<input type="file" accept=".csv,text/csv" class="hidden" data-action="csvUpload" /></label>
+            <button class="btn btn-secondary" data-action="sync">${I.refresh} Sync</button>
+            <button class="btn btn-primary" ${state.importSelection.length === 0 ? 'disabled' : ''} data-action="doImport">
+              ${I.download} Importieren (${state.importSelection.length})
+            </button>
+          </div>
+        </div>
+
+        <div class="card p-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative flex-1 min-w-[220px]">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${I.search}</span>
+              <input class="input pl-9" placeholder="Produkt, Hersteller, Agentur..." value="${esc(state.importSearch)}" data-action="importSearch" />
+              ${state.importSearch ? `<button class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400" data-action="clearImportSearch">${I.x}</button>` : ''}
+            </div>
+          </div>
+        </div>
+
+        ${state.gzg.length === 0 ? `
+          <div class="card p-8 text-center space-y-4">
+            <p>Noch keine GZG-Aktionen geladen.</p>
+            <div class="flex flex-wrap gap-2 justify-center">
+              <button class="btn btn-primary" data-action="sync">${I.refresh} Sync versuchen</button>
+              <label class="btn btn-secondary cursor-pointer">${I.upload} CSV-Datei laden<input type="file" accept=".csv,text/csv" class="hidden" data-action="csvUpload" /></label>
+            </div>
+            <div class="text-xs text-slate-500 max-w-md mx-auto space-y-2 text-left">
+              <p><strong>Sync klappt nicht?</strong> Google Sheets blockiert manchmal Browser-Anfragen. Lade die CSV manuell:</p>
+              <ol class="list-decimal list-inside space-y-1">
+                <li>Im Google Sheet: <em>Datei → Herunterladen → CSV (.csv)</em></li>
+                <li>Dann hier <strong>„CSV-Datei laden"</strong> klicken</li>
+              </ol>
+            </div>
+          </div>
+        ` : `
+        <div class="card overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-slate-50 dark:bg-slate-900">
+                <tr>
+                  <th class="w-10 px-4 py-3"><input type="checkbox" class="h-4 w-4 cursor-pointer" ${allSelected ? 'checked' : ''} data-action="toggleAll" /></th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Aktion</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Aktions-Ende</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Einsendeschluss</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Kontingent</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Agentur</th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Vorschau</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                ${items.length === 0
+                  ? `<tr><td colspan="7" class="p-12 text-center text-slate-500">Keine passenden Einträge.</td></tr>`
+                  : items.map(g => {
+                      const dl = daysUntil(g.einsendeschluss);
+                      let dlBadge = '';
+                      if (dl != null) {
+                        const cls = dl < 0 ? 'badge-warn' : dl <= 3 ? 'badge-warn' : dl <= 14 ? 'badge-soon' : '';
+                        if (cls) {
+                          const txt = dl < 0 ? `${Math.abs(dl)}d überfällig` : dl === 0 ? 'heute' : `noch ${dl}d`;
+                          dlBadge = ` <span class="badge ${cls}">${txt}</span>`;
+                        }
+                      }
+                      return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 ${state.importSelection.includes(g.id) ? 'bg-brand-50/30 dark:bg-blue-950/20' : ''}">
+                        <td class="px-4 py-3"><input type="checkbox" class="h-4 w-4 cursor-pointer" ${state.importSelection.includes(g.id) ? 'checked' : ''} data-action="toggleOne" data-id="${g.id}" /></td>
+                        <td class="px-4 py-3">
+                          <div class="font-medium">${esc(g.produktname)}</div>
+                          <div class="flex flex-wrap gap-2 mt-1 text-xs text-slate-500">
+                            ${g.hersteller ? `<span>${esc(g.hersteller)}</span>` : ''}
+                            ${g.cashbackBetrag ? `<span class="font-medium text-emerald-600 dark:text-emerald-400">${fmtCurrency(g.cashbackBetrag)}</span>` : ''}
+                          </div>
+                        </td>
+                        <td class="px-4 py-3 text-xs">${esc(g.aktionsende || '–')}</td>
+                        <td class="px-4 py-3 text-xs">${esc(g.einsendeschluss || '–')}${dlBadge}</td>
+                        <td class="px-4 py-3 text-xs">${esc(g.kontingent || '–')}</td>
+                        <td class="px-4 py-3 text-xs">${esc(g.agentur || '–')}</td>
+                        <td class="px-4 py-3 text-right">
+                          <button class="btn btn-ghost p-1.5" data-action="previewGzg" data-id="${g.id}">Details</button>
+                        </td>
+                      </tr>`;
+                    }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`}
+      </div>`;
+  }
+
+  // ============================================================
+  // RENDER: STATISTIKEN
+  // ============================================================
+  function renderStatistiken() {
+    const s = getStats();
+    const month = getMonthStats();
+    const hersteller = getHerstellerStats();
+    const max = Math.max(1, ...month.map(m => m.betrag));
+
+    return `
+      <div class="space-y-6">
+        <h1 class="text-2xl font-bold">Statistiken</h1>
+        <div class="grid gap-4 sm:grid-cols-3">
+          ${[
+            { label: 'Gesamt', v: s.summen.gesamt, c: 'bg-brand-600' },
+            { label: 'Bereits erhalten', v: s.summen.erhalten, c: 'bg-emerald-500' },
+            { label: 'Noch ausstehend', v: s.summen.ausstehend, c: 'bg-amber-500' },
+          ].map(c => `
+            <div class="card p-5 flex items-center gap-4">
+              <div class="h-10 w-1 rounded-full ${c.c}"></div>
+              <div>
+                <p class="text-xs uppercase tracking-wide text-slate-500">${c.label}</p>
+                <p class="text-2xl font-bold tabular-nums">${fmtCurrency(c.v)}</p>
+              </div>
+            </div>`).join('')}
+        </div>
+
+        <div class="card p-5">
+          <h2 class="mb-4 font-semibold">Cashback pro Monat</h2>
+          ${month.length === 0
+            ? '<p class="text-sm text-slate-500">Keine Daten.</p>'
+            : `<div class="flex items-end gap-2 h-64 px-2">
+                ${month.map(m => `
+                  <div class="flex-1 flex flex-col items-center gap-1 min-w-0">
+                    <div class="text-xs tabular-nums text-slate-500">${fmtCurrency(m.betrag)}</div>
+                    <div class="bar w-full" style="height: ${(m.betrag / max) * 80}%"></div>
+                    <div class="text-xs text-slate-500 truncate w-full text-center">${m.monat}</div>
+                  </div>`).join('')}
+              </div>`}
+        </div>
+
+        <div class="card p-5">
+          <h2 class="mb-4 font-semibold">Hersteller</h2>
+          ${hersteller.length === 0
+            ? '<p class="text-sm text-slate-500">Keine Daten.</p>'
+            : (() => {
+                const total = hersteller.reduce((sum, h) => sum + h.betrag, 0) || 1;
+                return `<div class="overflow-x-auto"><table class="min-w-full text-sm">
+                  <thead><tr>
+                    <th class="px-2 py-2 text-left text-xs font-semibold uppercase text-slate-500">Hersteller</th>
+                    <th class="px-2 py-2 text-right text-xs font-semibold uppercase text-slate-500">Anzahl</th>
+                    <th class="px-2 py-2 text-right text-xs font-semibold uppercase text-slate-500">Summe</th>
+                    <th class="px-2 py-2 text-left text-xs font-semibold uppercase text-slate-500 w-1/3">Anteil</th>
+                  </tr></thead>
+                  <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                    ${hersteller.map(h => `
+                      <tr>
+                        <td class="px-2 py-2 font-medium">${esc(h.hersteller)}</td>
+                        <td class="px-2 py-2 text-right tabular-nums">${h.anzahl}</td>
+                        <td class="px-2 py-2 text-right tabular-nums">${fmtCurrency(h.betrag)}</td>
+                        <td class="px-2 py-2"><div class="h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden"><div class="h-full bg-brand-500" style="width: ${(h.betrag / total) * 100}%"></div></div></td>
+                      </tr>`).join('')}
+                  </tbody></table></div>`;
+              })()}
+        </div>
+      </div>`;
+  }
+
+  // ============================================================
+  // FORMS
+  // ============================================================
+  function openAktionForm(aktion) {
+    const a = aktion || { status: 'OFFEN' };
+    const isEdit = !!aktion;
+    const body = `
+      <form id="aktion-form" class="space-y-4">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block sm:col-span-2"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Produkt *</span><input class="input" name="produktname" value="${esc(a.produktname || '')}" required /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Hersteller</span><input class="input" name="hersteller" value="${esc(a.hersteller || '')}" /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Kaufstätte</span><input class="input" name="kaufstaette" value="${esc(a.kaufstaette || '')}" placeholder="z.B. Edeka, Rossmann..." /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Cashback-Betrag (€) *</span><input type="number" step="0.01" class="input" name="cashbackBetrag" value="${a.cashbackBetrag ?? ''}" required /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Status</span><select class="input" name="status">${STATUS_LIST.map(s => `<option value="${s}" ${a.status === s ? 'selected' : ''}>${STATUS_LABEL[s]}</option>`).join('')}</select></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Kaufdatum</span><input type="date" class="input" name="kaufdatum" value="${toInputDate(a.kaufdatum)}" /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Teilnahmedatum</span><input type="date" class="input" name="teilnahmedatum" value="${toInputDate(a.teilnahmedatum)}" /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Einsendeschluss</span><input type="date" class="input" name="einsendeschluss" value="${toInputDate(a.einsendeschluss)}" /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Aktions-Ende</span><input type="date" class="input" name="aktionsende" value="${toInputDate(a.aktionsende)}" /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Cashback erhalten am</span><input type="date" class="input" name="cashbackErhaltenAm" value="${toInputDate(a.cashbackErhaltenAm)}" /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Belegnummer / Referenz</span><input class="input" name="belegnummer" value="${esc(a.belegnummer || '')}" /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Abwickelnde Agentur</span><input class="input" name="agentur" value="${esc(a.agentur || '')}" /></label>
+          <label class="block sm:col-span-2"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Aktionsseite (URL)</span><input class="input" name="aktionsseite" value="${esc(a.aktionsseite || '')}" /></label>
+          <label class="block sm:col-span-2"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">mydealz-Link</span><input class="input" name="mydealzLink" value="${esc(a.mydealzLink || '')}" /></label>
+        </div>
+        <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Bemerkungen</span><textarea rows="3" class="input" name="bemerkungen">${esc(a.bemerkungen || '')}</textarea></label>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" class="btn btn-secondary" data-action="modalCancel">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">${isEdit ? 'Aktualisieren' : 'Anlegen'}</button>
+        </div>
+      </form>`;
+    openModal({ title: isEdit ? `Bearbeiten: ${a.produktname}` : 'Neue Aktion', body, size: 'lg' });
+    document.getElementById('aktion-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const v = Object.fromEntries(fd.entries());
+      if (!v.produktname.trim()) { toast('Produkt fehlt', 'error'); return; }
+      saveAktion(v, aktion?.id);
+    });
+    document.querySelector('[data-action="modalCancel"]').addEventListener('click', closeModal);
+  }
+
+  function openDeleteConfirm(id) {
+    const body = `
+      <p class="text-sm text-slate-600 dark:text-slate-400">Diese Aktion wirklich löschen?</p>
+      <div class="mt-6 flex justify-end gap-2">
+        <button class="btn btn-secondary" data-action="modalCancel">Abbrechen</button>
+        <button class="btn btn-danger" data-action="confirmDelete">Löschen</button>
+      </div>`;
+    openModal({ title: 'Löschen?', body, size: 'sm' });
+    document.querySelector('[data-action="modalCancel"]').addEventListener('click', closeModal);
+    document.querySelector('[data-action="confirmDelete"]').addEventListener('click', () => deleteAktion(id));
+  }
+
+  function openGzgPreview(id) {
+    const g = state.gzg.find(x => x.id === id);
+    if (!g) return;
+    const sel = state.importSelection.includes(id);
+    const linkBtn = (label, url) => url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="btn btn-secondary">${I.link} ${label}</a>` : '';
+    const body = `
+      <div class="space-y-4">
+        <div>
+          <h3 class="text-base font-semibold">${esc(g.produktname)}</h3>
+          ${g.hersteller ? `<p class="text-sm text-slate-500">${esc(g.hersteller)}</p>` : ''}
+        </div>
+        <dl class="grid gap-3 sm:grid-cols-2 text-sm">
+          ${g.cashbackBetrag ? `<div><dt class="text-xs font-medium text-slate-500">Cashback</dt><dd class="mt-1 font-semibold text-emerald-600 dark:text-emerald-400">${fmtCurrency(g.cashbackBetrag)}</dd></div>` : ''}
+          ${g.kontingent ? `<div><dt class="text-xs font-medium text-slate-500">Kontingent</dt><dd class="mt-1 font-medium">${esc(g.kontingent)}</dd></div>` : ''}
+          ${g.aktionsende ? `<div><dt class="text-xs font-medium text-slate-500">Aktions-Ende</dt><dd class="mt-1 font-medium">${esc(g.aktionsende)}</dd></div>` : ''}
+          ${g.einsendeschluss ? `<div><dt class="text-xs font-medium text-slate-500">Einsendeschluss</dt><dd class="mt-1 font-medium">${esc(g.einsendeschluss)}</dd></div>` : ''}
+          ${g.einreichungsfrist ? `<div><dt class="text-xs font-medium text-slate-500">Einreichungsfrist</dt><dd class="mt-1 font-medium">${esc(g.einreichungsfrist)}</dd></div>` : ''}
+          ${g.teilnahme ? `<div><dt class="text-xs font-medium text-slate-500">Art der Teilnahme</dt><dd class="mt-1 font-medium">${esc(g.teilnahme)}</dd></div>` : ''}
+          ${g.kaufbeleg ? `<div><dt class="text-xs font-medium text-slate-500">Art des Kaufbeleges</dt><dd class="mt-1 font-medium">${esc(g.kaufbeleg)}</dd></div>` : ''}
+          ${g.agentur ? `<div><dt class="text-xs font-medium text-slate-500">Agentur</dt><dd class="mt-1 font-medium">${esc(g.agentur)}</dd></div>` : ''}
+          <div><dt class="text-xs font-medium text-slate-500">SMS-Bestätigung</dt><dd class="mt-1 font-medium">${g.sms ? 'Ja' : 'Nein'}</dd></div>
+        </dl>
+        <div class="flex flex-wrap gap-2">
+          ${linkBtn('Aktionsseite', g.aktionsseite)}
+          ${linkBtn('mydealz', g.mydealzLink)}
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        ${!sel ? `<button class="btn btn-secondary" data-action="selectFromPreview" data-id="${id}">${I.check} Auswählen</button>` : ''}
+        <button class="btn btn-primary" data-action="modalCancel">Schließen</button>
+      </div>`;
+    openModal({ title: 'GZG-Aktion', body, size: 'md' });
+    document.querySelector('[data-action="modalCancel"]').addEventListener('click', closeModal);
+    const selBtn = document.querySelector('[data-action="selectFromPreview"]');
+    if (selBtn) selBtn.addEventListener('click', () => { setState({ importSelection: [...state.importSelection, id] }); closeModal(); });
+  }
+
+  function openSettings() {
+    const body = `
+      <div class="space-y-4 text-sm">
+        <div class="card p-4 space-y-3">
+          <h3 class="font-semibold">Google Sheets-Quelle</h3>
+          <input class="input" id="set-sheet-url" value="${esc(state.sheetUrl)}" placeholder="https://docs.google.com/spreadsheets/d/..." />
+          <p class="text-xs text-slate-500">Die Tabelle muss "öffentlich für alle mit dem Link" freigegeben sein.</p>
+          <div class="flex flex-wrap gap-2">
+            <button class="btn btn-secondary" id="save-sheet-url">Speichern</button>
+            <button class="btn btn-primary" id="sync-now">${I.refresh} Jetzt synchronisieren</button>
+          </div>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-semibold mb-2">Daten</h3>
+          <p class="text-slate-500 mb-3">${state.aktionen.length} Aktionen, ${state.gzg.length} GZG-Einträge.</p>
+          <div class="flex flex-wrap gap-2">
+            <button class="btn btn-secondary" id="export-json">${I.download} Backup als JSON</button>
+            <label class="btn btn-secondary cursor-pointer">${I.upload} JSON laden<input type="file" accept=".json" class="hidden" id="import-json" /></label>
+          </div>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-semibold mb-2 text-red-600">Zurücksetzen</h3>
+          <p class="text-slate-500 mb-3">Löscht alle Aktionen und GZG-Daten.</p>
+          <button class="btn btn-danger" id="reset-all">Alles zurücksetzen</button>
+        </div>
+      </div>`;
+    openModal({ title: 'Einstellungen', body, size: 'md' });
+
+    document.getElementById('save-sheet-url').onclick = () => {
+      const v = document.getElementById('set-sheet-url').value.trim();
+      setState({ sheetUrl: v });
+      toast('Sheet-URL gespeichert.', 'success');
+    };
+    document.getElementById('sync-now').onclick = () => {
+      const v = document.getElementById('set-sheet-url').value.trim();
+      if (v !== state.sheetUrl) setState({ sheetUrl: v });
+      closeModal();
+      syncFromGoogleSheets();
+    };
+    document.getElementById('export-json').onclick = () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `gzg-backup-${new Date().toISOString().substring(0, 10)}.json`;
+      a.click(); URL.revokeObjectURL(url);
+      toast('Backup erstellt.', 'success');
+    };
+    document.getElementById('import-json').onchange = e => {
+      const f = e.target.files?.[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = ev => {
+        try {
+          const d = JSON.parse(ev.target.result);
+          if (!Array.isArray(d.aktionen) || !Array.isArray(d.gzg)) throw new Error('Ungültiges Format');
+          state = { ...state, ...d }; persist(); render(); closeModal();
+          toast('Daten geladen.', 'success');
+        } catch (err) { toast('Fehler: ' + err.message, 'error'); }
+      };
+      r.readAsText(f);
+    };
+    document.getElementById('reset-all').onclick = () => {
+      if (!confirm('Wirklich alle Daten löschen?')) return;
+      Store.reset();
+      state = { ...initialState, theme: state.theme };
+      persist(); render(); closeModal();
+      toast('Daten zurückgesetzt.', 'success');
+    };
+  }
+
+  // ============================================================
+  // EVENTS
+  // ============================================================
+  function bindEvents() {
+    const app = document.getElementById('app');
+
+    app.onclick = (e) => {
+      const t = e.target.closest('[data-action]');
+      if (!t) return;
+      const a = t.dataset.action;
+
+      if (a === 'navigate') setState({ route: t.dataset.route });
+      else if (a === 'toggleTheme') setState({ theme: state.theme === 'dark' ? 'light' : 'dark' });
+      else if (a === 'settings') openSettings();
+      else if (a === 'sync') syncFromGoogleSheets();
+      else if (a === 'newAktion') openAktionForm(null);
+      else if (a === 'editAktion') openAktionForm(state.aktionen.find(x => x.id === Number(t.dataset.id)));
+      else if (a === 'deleteAktion') openDeleteConfirm(Number(t.dataset.id));
+      else if (a === 'exportCSV') exportCSV();
+      else if (a === 'toggleFilter') setState({ showFilter: !state.showFilter });
+      else if (a === 'clearSearch') setState({ filter: { ...state.filter, search: '', page: 1 } });
+      else if (a === 'sort') {
+        const c = t.dataset.col;
+        const dir = state.filter.sortBy === c && state.filter.sortDir === 'asc' ? 'desc' : 'asc';
+        setState({ filter: { ...state.filter, sortBy: c, sortDir: dir } });
+      }
+      else if (a === 'page') setState({ filter: { ...state.filter, page: Math.max(1, state.filter.page + Number(t.dataset.dir)) } });
+      else if (a === 'resetFilter') setState({ filter: { ...state.filter, status: '', hersteller: '', kaufstaette: '', von: '', bis: '', page: 1 } });
+      else if (a === 'toggleAll') {
+        const items = state.gzg.filter(g => !g.importiert).filter(g => {
+          if (!state.importSearch) return true;
+          const s = state.importSearch.toLowerCase();
+          return g.produktname.toLowerCase().includes(s) || (g.hersteller || '').toLowerCase().includes(s) || (g.agentur || '').toLowerCase().includes(s);
+        });
+        const ids = items.map(i => i.id);
+        const all = ids.every(id => state.importSelection.includes(id));
+        setState({ importSelection: all ? [] : ids });
+      }
+      else if (a === 'toggleOne') {
+        const id = Number(t.dataset.id);
+        setState({ importSelection: state.importSelection.includes(id) ? state.importSelection.filter(x => x !== id) : [...state.importSelection, id] });
+      }
+      else if (a === 'doImport') importGZG(state.importSelection);
+      else if (a === 'previewGzg') openGzgPreview(Number(t.dataset.id));
+      else if (a === 'clearImportSearch') setState({ importSearch: '' });
+    };
+
+    app.oninput = (e) => {
+      const t = e.target.closest('[data-action]');
+      if (!t) return;
+      if (t.dataset.action === 'search-input') {
+        clearTimeout(window._st);
+        window._st = setTimeout(() => setState({ filter: { ...state.filter, search: t.value, page: 1 } }), 250);
+      } else if (t.dataset.action === 'importSearch') {
+        clearTimeout(window._it);
+        window._it = setTimeout(() => setState({ importSearch: t.value }), 250);
+      }
+    };
+
+    app.onchange = (e) => {
+      const t = e.target.closest('[data-action]');
+      if (!t) return;
+      if (t.dataset.action === 'filter') setState({ filter: { ...state.filter, [t.dataset.key]: t.value, page: 1 } });
+      else if (t.dataset.action === 'csvUpload') {
+        const f = t.files?.[0];
+        if (f) importCsvFile(f);
+        t.value = '';
+      }
+    };
+  }
+
+  // ============================================================
+  // RENDER MAIN
+  // ============================================================
+  function render() {
+    applyTheme();
+    let content;
+    switch (state.route) {
+      case 'aktionen': content = renderAktionen(); break;
+      case 'import': content = renderImport(); break;
+      case 'statistiken': content = renderStatistiken(); break;
+      default: content = renderDashboard();
+    }
+    document.getElementById('app').innerHTML = renderShell(content);
+
+    if (state.route === 'aktionen') {
+      const inp = document.querySelector('[data-action="search-input"]');
+      if (inp && document.activeElement !== inp && inp.value) {
+        const v = inp.value; inp.focus(); inp.setSelectionRange(v.length, v.length);
+      }
+    }
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  bindEvents();
+  render();
+
+  // Beim allerersten Aufruf gleich synchronisieren
+  if (!state.lastSync && state.gzg.length === 0 && state.sheetUrl) {
+    syncFromGoogleSheets();
+  }
+  </script>
+</body>
+</html>
