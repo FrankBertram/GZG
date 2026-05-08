@@ -1222,9 +1222,9 @@
           <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Cashback-Betrag (€) *</span><input type="number" step="0.01" class="input" name="cashbackBetrag" value="${a.cashbackBetrag ?? ''}" required /></label>
           <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Status</span><select class="input" name="status">${STATUS_LIST.map(s => `<option value="${s}" ${a.status === s ? 'selected' : ''}>${STATUS_LABEL[s]}</option>`).join('')}</select></label>
           <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Kaufdatum</span><input type="date" class="input" name="kaufdatum" value="${toInputDate(a.kaufdatum)}" /></label>
-          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Einsendeschluss</span><input type="date" class="input" name="einsendeschluss" value="${toInputDate(a.einsendeschluss)}" /></label>
-          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Aktions-Ende</span><input type="date" class="input" name="aktionsende" value="${toInputDate(a.aktionsende)}" /></label>
           <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Cashback erhalten am</span><input type="date" class="input" name="cashbackErhaltenAm" value="${toInputDate(a.cashbackErhaltenAm)}" /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Aktions-Ende</span><input type="date" class="input" name="aktionsende" value="${toInputDate(a.aktionsende)}" /></label>
+          <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Einsendeschluss</span><input type="date" class="input" name="einsendeschluss" value="${toInputDate(a.einsendeschluss)}" /></label>
           <label class="block sm:col-span-2">
             <span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Aktionsseite (URL)</span>
             <div class="flex gap-2">
