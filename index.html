@@ -160,6 +160,7 @@
     importSort: 'einsendeschluss-asc',
     showHiddenGzg: false,
     showFilter: false,
+    lastSeenGzg: null,
   };
 
   let state = (() => {
@@ -174,7 +175,20 @@
   })();
 
   function persist() { Store.save(state); }
-  function setState(patch) { state = { ...state, ...patch }; persist(); render(); }
+  function setState(patch) {
+    // Beim Verlassen der GZG-Liste: NEU-Markierung "abhaken"
+    if (patch.route && patch.route !== state.route && state.route === 'import') {
+      patch = { ...patch, lastSeenGzg: new Date().toISOString() };
+    }
+    state = { ...state, ...patch };
+    persist();
+    render();
+  }
+  function isNewGzg(g) {
+    if (!g || g.importiert || !g.addedAt) return false;
+    if (!state.lastSeenGzg) return true;
+    return g.addedAt > state.lastSeenGzg;
+  }
 
   // ============================================================
   // UTILS
@@ -331,9 +345,10 @@
       for (const url of urls) results.push(await syncOneSheet(url));
       const all = results.flat();
       if (all.length === 0) throw new Error('Keine Datenzeilen gefunden');
-      mergeGZG(all);
+      const stats = mergeGZG(all);
       setState({ lastSync: new Date().toISOString() });
-      toast(`${all.length} GZG-Aktionen synchronisiert${urls.length > 1 ? ` (${urls.length} Tabs)` : ''}.`, 'success');
+      const breakdown = `${stats.added} neu, ${stats.updated} aktualisiert`;
+      toast(`${all.length} GZG-Aktionen synchronisiert (${breakdown}).`, stats.added > 0 ? 'success' : 'info');
     } catch (e) {
       console.error(e);
       toast('Sync fehlgeschlagen: ' + e.message + '. Tipp: CSV manuell laden über "GZG-Liste → CSV laden".', 'error');
@@ -347,9 +362,9 @@
       try {
         const parsed = parseGZGCsv(String(e.target.result));
         if (parsed.length === 0) throw new Error('Keine Datenzeilen erkannt');
-        mergeGZG(parsed);
+        const stats = mergeGZG(parsed);
         setState({ lastSync: new Date().toISOString() });
-        toast(`${parsed.length} GZG-Aktionen aus CSV geladen.`, 'success');
+        toast(`${parsed.length} GZG-Aktionen aus CSV geladen (${stats.added} neu, ${stats.updated} aktualisiert).`, stats.added > 0 ? 'success' : 'info');
       } catch (err) {
         toast('CSV-Import fehlgeschlagen: ' + err.message, 'error');
       }
@@ -562,16 +577,27 @@
     // 2. Drop non-imported entries that are no longer in the source
     let kept = state.gzg.filter(g => g.importiert || freshNames.has(g.produktname));
     let nextId = state.nextId.gzg;
+    let added = 0, updated = 0;
+    const now = new Date().toISOString();
     for (const f of fresh) {
       const existing = kept.find(g => g.produktname === f.produktname);
       if (existing) {
-        // Update existing fields but preserve id, importiert, hidden, and cellColor flag
-        Object.assign(existing, f, { id: existing.id, importiert: existing.importiert, hidden: existing.hidden, cellColor: existing.cellColor || null });
+        // Update existing fields but preserve id, importiert, hidden, cellColor and addedAt
+        Object.assign(existing, f, {
+          id: existing.id,
+          importiert: existing.importiert,
+          hidden: existing.hidden,
+          cellColor: existing.cellColor || null,
+          addedAt: existing.addedAt,
+        });
+        updated++;
       } else {
-        kept.push({ id: nextId++, ...f, importiert: false, hidden: false, cellColor: null });
+        kept.push({ id: nextId++, ...f, importiert: false, hidden: false, cellColor: null, addedAt: now });
+        added++;
       }
     }
     setState({ gzg: kept, nextId: { ...state.nextId, gzg: nextId } });
+    return { added, updated };
   }
 
   // ============================================================
@@ -784,6 +810,12 @@
 
   function renderShell(content) {
     const remCount = getReminders().length;
+    const newGzgCount = state.gzg.filter(g => isNewGzg(g)).length;
+    const navBadge = (n) => {
+      if (n.id === 'dashboard' && remCount > 0) return `<span class="ml-1 inline-flex items-center justify-center bg-red-500 text-white rounded-full text-xs px-1.5 min-w-[1.25rem]">${remCount}</span>`;
+      if (n.id === 'import' && newGzgCount > 0) return `<span class="ml-1 inline-flex items-center justify-center bg-emerald-500 text-white rounded-full text-xs px-1.5 min-w-[1.25rem]">${newGzgCount}</span>`;
+      return '';
+    };
     return `
       <div class="min-h-screen flex flex-col">
         <header class="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur">
@@ -800,7 +832,7 @@
             </div>
           </div>
           <nav class="mx-auto max-w-7xl px-2 sm:px-6 pb-2 flex gap-1 overflow-x-auto">
-            ${NAV.map(n => `<button class="nav-link ${state.route === n.id ? 'active' : ''}" data-action="navigate" data-route="${n.id}">${I[n.icon]}${n.label}${n.id === 'dashboard' && remCount > 0 ? `<span class="ml-1 inline-flex items-center justify-center bg-red-500 text-white rounded-full text-xs px-1.5 min-w-[1.25rem]">${remCount}</span>` : ''}</button>`).join('')}
+            ${NAV.map(n => `<button class="nav-link ${state.route === n.id ? 'active' : ''}" data-action="navigate" data-route="${n.id}">${I[n.icon]}${n.label}${navBadge(n)}</button>`).join('')}
           </nav>
         </header>
         <main class="mx-auto max-w-7xl w-full flex-1 px-4 sm:px-6 py-6">${content}</main>
@@ -1118,6 +1150,7 @@
                     <div class="flex-1 min-w-0">
                       <h3 class="font-semibold leading-snug line-clamp-2" title="${esc(g.produktname)}">${esc(g.produktname)}</h3>
                       <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs">
+                        ${isNewGzg(g) ? `<span class="badge bg-emerald-500 text-white">NEU</span>` : ''}
                         ${g.hersteller ? `<span class="text-slate-500">${esc(g.hersteller)}</span>` : ''}
                         ${g.cashbackBetrag ? `<span class="font-semibold text-emerald-600 dark:text-emerald-400">${fmtCurrency(g.cashbackBetrag)}</span>` : ''}
                         ${dlBadge}
