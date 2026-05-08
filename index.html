@@ -903,23 +903,23 @@
               : `<ul class="space-y-2">${reminders.map(r => {
                   const cls = r.daysLeft < 0 ? 'badge-warn' : r.daysLeft <= 3 ? 'badge-warn' : 'badge-soon';
                   const txt = r.daysLeft < 0 ? `${Math.abs(r.daysLeft)} Tage überfällig` : r.daysLeft === 0 ? 'Heute!' : `noch ${r.daysLeft} Tage`;
-                  return `<li class="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 gap-2">
-                    <div class="min-w-0">
-                      <p class="text-sm font-medium truncate">${esc(r.produktname)}</p>
+                  return `<li class="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 gap-1 sm:gap-2">
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium break-words sm:truncate">${esc(r.produktname)}</p>
                       <p class="text-xs text-slate-500">Einsendeschluss: ${fmtDate(r.einsendeschluss)} · ${fmtCurrency(r.cashbackBetrag)}</p>
                     </div>
-                    <span class="badge ${cls} flex-none">${txt}</span>
+                    <span class="badge ${cls} flex-none self-start sm:self-auto">${txt}</span>
                   </li>`;
                 }).join('')}</ul>`}
           </div>
 
           <div class="card p-5">
             <h2 class="mb-4 font-semibold">Schnellzugriff</h2>
-            <div class="grid gap-3 sm:grid-cols-2">
-              <button class="btn btn-primary justify-center" data-action="navigate" data-route="import">${I.download} GZG-Liste öffnen</button>
-              <button class="btn btn-secondary justify-center" data-action="navigate" data-route="aktionen">Meine Aktionen</button>
-              <button class="btn btn-secondary justify-center" data-action="navigate" data-route="statistiken">Statistiken</button>
-              <button class="btn btn-secondary justify-center" data-action="exportCSV">${I.download} CSV-Export</button>
+            <div class="grid grid-cols-2 gap-3">
+              <button class="btn btn-primary justify-center text-center" data-action="navigate" data-route="import">${I.download}<span class="truncate">GZG-Liste</span></button>
+              <button class="btn btn-secondary justify-center text-center" data-action="navigate" data-route="aktionen"><span class="truncate">Meine Aktionen</span></button>
+              <button class="btn btn-secondary justify-center text-center" data-action="navigate" data-route="statistiken"><span class="truncate">Statistiken</span></button>
+              <button class="btn btn-secondary justify-center text-center" data-action="exportCSV">${I.download}<span class="truncate">CSV-Export</span></button>
             </div>
           </div>
         </div>
