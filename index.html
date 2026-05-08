@@ -1497,8 +1497,14 @@
       else if (a === 'clearImportSearch') setState({ importSearch: '' });
       else if (a === 'toggleHide') {
         const id = Number(t.dataset.id);
+        const target = state.gzg.find(g => g.id === id);
+        const willBeHidden = target && !target.hidden;
         const newGzg = state.gzg.map(g => g.id === id ? { ...g, hidden: !g.hidden } : g);
-        setState({ gzg: newGzg, importSelection: state.importSelection.filter(x => x !== id) });
+        setState({
+          gzg: newGzg,
+          importSelection: state.importSelection.filter(x => x !== id),
+          showHiddenGzg: willBeHidden ? false : state.showHiddenGzg,
+        });
       }
       else if (a === 'toggleShowHidden') setState({ showHiddenGzg: !state.showHiddenGzg });
     };
