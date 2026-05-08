@@ -54,6 +54,8 @@
 
     .card { border-radius: 0.75rem; border: 1px solid #e2e8f0; background-color: white; box-shadow: 0 1px 2px 0 rgba(0,0,0,.05); }
     .dark .card { border-color: #1e293b; background-color: #0f172a; }
+    .card.cell-yellow { background-color: #fef9c3; border-color: #fde68a; }
+    .dark .card.cell-yellow { background-color: rgba(133,77,14,.28); border-color: rgba(202,138,4,.5); }
 
     .badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 0.125rem 0.625rem; font-size: 0.75rem; font-weight: 500; }
     .badge-OFFEN { background-color: #fef3c7; color: #92400e; }
@@ -95,6 +97,7 @@
   const STATUS_LIST = ['OFFEN', 'EINGEREICHT', 'ERHALTEN', 'ABGELEHNT'];
   const STATUS_LABEL = { OFFEN: 'Offen', EINGEREICHT: 'Eingereicht', ERHALTEN: 'Erhalten', ABGELEHNT: 'Abgelehnt' };
   const STORAGE_KEY = 'gzg_cashback_v2';
+  const APP_VERSION = 'V1.0';
   const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1wcqckNai9SyRbQLt-pj6FHzGM7sypoET9glyAE05u2E/edit?gid=2093940701';
 
   // ============================================================
@@ -124,6 +127,7 @@
     settings: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
     link: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
     check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    package: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>',
   };
 
   // ============================================================
@@ -557,10 +561,10 @@
     for (const f of fresh) {
       const existing = kept.find(g => g.produktname === f.produktname);
       if (existing) {
-        // Update existing fields but preserve id, importiert, and hidden flag
-        Object.assign(existing, f, { id: existing.id, importiert: existing.importiert, hidden: existing.hidden });
+        // Update existing fields but preserve id, importiert, hidden, and cellColor flag
+        Object.assign(existing, f, { id: existing.id, importiert: existing.importiert, hidden: existing.hidden, cellColor: existing.cellColor || null });
       } else {
-        kept.push({ id: nextId++, ...f, importiert: false, hidden: false });
+        kept.push({ id: nextId++, ...f, importiert: false, hidden: false, cellColor: null });
       }
     }
     setState({ gzg: kept, nextId: { ...state.nextId, gzg: nextId } });
@@ -794,6 +798,7 @@
             <div class="flex items-center gap-2">
               <span class="text-brand-600">${I.wallet}</span>
               <span class="text-lg font-semibold">GZG-Verwaltung</span>
+              <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">${APP_VERSION}</span>
             </div>
             <div class="flex items-center gap-1">
               <button class="btn btn-ghost p-2" data-action="sync" title="Aus Google Sheets synchronisieren">${I.refresh}</button>
@@ -808,7 +813,7 @@
         <main class="mx-auto max-w-7xl w-full flex-1 px-4 sm:px-6 py-6">${content}</main>
         <footer class="border-t border-slate-200 dark:border-slate-800 py-3 text-center text-xs text-slate-500">
           ${state.lastSync ? `Letzte Synchronisation: ${new Date(state.lastSync).toLocaleString('de-DE')}` : 'Noch nicht synchronisiert.'}
-          · Daten lokal im Browser
+          · Daten lokal im Browser · GZG-Verwaltung ${APP_VERSION}
         </footer>
       </div>`;
   }
@@ -1129,7 +1134,8 @@
                   dlBadge = `<span class="badge ${cls || 'badge-EINGEREICHT'}">${txt}</span>`;
                 }
                 const sel = state.importSelection.includes(g.id);
-                return `<div class="card p-4 flex flex-col gap-3 transition-shadow hover:shadow-md ${sel ? 'ring-2 ring-brand-500' : ''} ${g.hidden ? 'opacity-50' : ''}">
+                const colorClass = g.cellColor === 'yellow' ? 'cell-yellow' : '';
+                return `<div class="card p-4 flex flex-col gap-3 transition-shadow hover:shadow-md ${colorClass} ${sel ? 'ring-2 ring-brand-500' : ''} ${g.hidden ? 'opacity-50' : ''}">
                   <div class="flex items-start gap-3">
                     ${logoForGzg(g)}
                     <div class="flex-1 min-w-0">
@@ -1151,7 +1157,8 @@
                   <div class="flex flex-wrap gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 mt-auto">
                     ${g.aktionsseite ? `<a href="${esc(g.aktionsseite)}" target="_blank" rel="noopener" class="btn btn-secondary text-xs py-1 px-2">${I.link} Aktion</a>` : ''}
                     ${g.mydealzLink ? `<a href="${esc(g.mydealzLink)}" target="_blank" rel="noopener" class="btn btn-secondary text-xs py-1 px-2">${I.link} mydealz</a>` : ''}
-                    <button class="btn btn-ghost text-xs py-1 px-2 ml-auto" data-action="toggleHide" data-id="${g.id}" title="${g.hidden ? 'Wieder anzeigen' : 'Ausblenden'}">${g.hidden ? I.eye : I.eyeOff}</button>
+                    <button class="btn btn-ghost text-xs py-1 px-2 ml-auto ${g.cellColor === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' : ''}" data-action="toggleAktionspackung" data-id="${g.id}" title="${g.cellColor === 'yellow' ? 'Aktionspackung-Markierung entfernen' : 'Als Aktionspackung markieren (gelb)'}">${I.package}</button>
+                    <button class="btn btn-ghost text-xs py-1 px-2" data-action="toggleHide" data-id="${g.id}" title="${g.hidden ? 'Wieder anzeigen' : 'Ausblenden'}">${g.hidden ? I.eye : I.eyeOff}</button>
                     <button class="btn btn-ghost text-xs py-1 px-2" data-action="previewGzg" data-id="${g.id}">Details →</button>
                   </div>
                 </div>`;
@@ -1507,6 +1514,11 @@
         });
       }
       else if (a === 'toggleShowHidden') setState({ showHiddenGzg: !state.showHiddenGzg });
+      else if (a === 'toggleAktionspackung') {
+        const id = Number(t.dataset.id);
+        const newGzg = state.gzg.map(g => g.id === id ? { ...g, cellColor: g.cellColor === 'yellow' ? null : 'yellow' } : g);
+        setState({ gzg: newGzg });
+      }
     };
 
     app.oninput = (e) => {
