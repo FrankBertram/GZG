@@ -101,7 +101,7 @@
   const STATUS_LIST = ['OFFEN', 'EINGEREICHT', 'ERHALTEN', 'ABGELEHNT'];
   const STATUS_LABEL = { OFFEN: 'Offen', EINGEREICHT: 'Eingereicht', ERHALTEN: 'Erhalten', ABGELEHNT: 'Abgelehnt' };
   const STORAGE_KEY = 'gzg_cashback_v2';
-  const APP_VERSION = 'V1.1';
+  const APP_VERSION = 'V1.2';
   const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1wcqckNai9SyRbQLt-pj6FHzGM7sypoET9glyAE05u2E/edit?gid=2093940701';
 
   // ============================================================
@@ -1097,7 +1097,7 @@
   function renderImport() {
     let items = state.gzg.filter(g => !g.importiert);
     const hiddenCount = items.filter(g => g.hidden).length;
-    if (!state.showHiddenGzg) items = items.filter(g => !g.hidden);
+    items = items.filter(g => state.showHiddenGzg ? g.hidden : !g.hidden);
     if (state.importSearch) {
       const s = state.importSearch.toLowerCase();
       items = items.filter(g =>
@@ -1126,8 +1126,8 @@
       <div class="space-y-4">
         <div class="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 class="text-2xl font-bold">GZG-Liste</h1>
-            <p class="text-sm text-slate-500">${items.length} verfügbare Aktionen · sortiert nach Einsendeschluss</p>
+            <h1 class="text-2xl font-bold">${state.showHiddenGzg ? 'Ausgeblendete GZG' : 'GZG-Liste'}</h1>
+            <p class="text-sm text-slate-500">${items.length} ${state.showHiddenGzg ? 'ausgeblendete' : 'verfügbare'} Aktionen · sortiert nach Einsendeschluss</p>
           </div>
           <div class="flex gap-2">
             <label class="btn btn-secondary cursor-pointer">${I.upload} CSV laden<input type="file" accept=".csv,text/csv" class="hidden" data-action="csvUpload" /></label>
@@ -1590,6 +1590,19 @@
   // ============================================================
   function render() {
     applyTheme();
+
+    // Fokus + Caret-Position des aktiven Inputs merken, damit Tippen
+    // während eines Re-Renders nicht den Fokus verliert.
+    const ae = document.activeElement;
+    let focusInfo = null;
+    if (ae && ae.dataset && ae.dataset.action && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) {
+      focusInfo = {
+        action: ae.dataset.action,
+        start: ae.selectionStart,
+        end: ae.selectionEnd,
+      };
+    }
+
     let content;
     switch (state.route) {
       case 'aktionen': content = renderAktionen(); break;
@@ -1599,10 +1612,16 @@
     }
     document.getElementById('app').innerHTML = renderShell(content);
 
-    if (state.route === 'aktionen') {
-      const inp = document.querySelector('[data-action="search-input"]');
-      if (inp && document.activeElement !== inp && inp.value) {
-        const v = inp.value; inp.focus(); inp.setSelectionRange(v.length, v.length);
+    if (focusInfo) {
+      const inp = document.querySelector(`[data-action="${focusInfo.action}"]`);
+      if (inp && document.activeElement !== inp) {
+        inp.focus();
+        try {
+          const len = inp.value.length;
+          const s = focusInfo.start != null ? Math.min(focusInfo.start, len) : len;
+          const e = focusInfo.end != null ? Math.min(focusInfo.end, len) : len;
+          inp.setSelectionRange(s, e);
+        } catch (_) {}
       }
     }
   }
