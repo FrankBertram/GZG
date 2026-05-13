@@ -1008,7 +1008,7 @@
                 ? `<img src="${faviconUrl(dom, 32)}" alt="" class="w-6 h-6 rounded flex-none" loading="lazy" onerror="this.style.display='none'" />`
                 : '';
               const rowColor = a.cellColor === 'yellow' ? 'row-yellow' : '';
-              return `<li class="p-3 flex flex-col gap-2 ${rowColor}">
+              return `<li class="p-3 flex flex-col gap-2 cursor-pointer ${rowColor}" data-action="editAktion" data-id="${a.id}">
                 <div class="flex items-start gap-2">
                   ${tinyLogo}
                   <div class="flex-1 min-w-0">
@@ -1024,7 +1024,6 @@
                   <span class="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 text-sm">${fmtCurrency(a.cashbackBetrag)}</span>
                 </div>
                 <div class="flex justify-end gap-1 pt-1">
-                  <button class="btn btn-ghost p-2" data-action="editAktion" data-id="${a.id}" aria-label="Bearbeiten">${I.pencil}</button>
                   <button class="btn btn-ghost p-2 text-red-600" data-action="deleteAktion" data-id="${a.id}" aria-label="Löschen">${I.trash}</button>
                 </div>
               </li>`;
@@ -1059,7 +1058,7 @@
                     ? `<img src="${faviconUrl(dom, 32)}" alt="" class="w-5 h-5 rounded inline-block mr-2 align-middle" loading="lazy" onerror="this.style.display='none'" />`
                     : '';
                   const rowColor = a.cellColor === 'yellow' ? 'row-yellow' : '';
-                  return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 ${rowColor}">
+                  return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 cursor-pointer ${rowColor}" data-action="editAktion" data-id="${a.id}">
                     <td class="px-4 py-3 font-medium">
                       <div class="flex items-center">${tinyLogo}<span>${esc(a.produktname)}</span></div>
                     </td>
@@ -1069,7 +1068,6 @@
                     <td class="px-4 py-3"><span class="badge badge-${a.status}">${STATUS_LABEL[a.status]}</span></td>
                     <td class="px-4 py-3 text-right">
                       <div class="flex justify-end gap-1">
-                        <button class="btn btn-ghost p-1.5" data-action="editAktion" data-id="${a.id}">${I.pencil}</button>
                         <button class="btn btn-ghost p-1.5 text-red-600" data-action="deleteAktion" data-id="${a.id}">${I.trash}</button>
                       </div>
                     </td>
@@ -1297,6 +1295,10 @@
     const body = `
       ${headerCard}
       <form id="aktion-form" class="space-y-4">
+        <div class="flex justify-end gap-2">
+          <button type="button" class="btn btn-secondary" data-action="modalCancel">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">${isEdit ? 'Aktualisieren' : 'Anlegen'}</button>
+        </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="block sm:col-span-2"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Produkt *</span><input class="input" name="produktname" value="${esc(a.produktname || '')}" required /></label>
           <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Cashback-Betrag (€) *</span><input type="number" step="0.01" class="input" name="cashbackBetrag" value="${a.cashbackBetrag ?? ''}" required /></label>
@@ -1321,10 +1323,6 @@
           </label>
         </div>
         <label class="block"><span class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Bemerkungen</span><textarea rows="3" class="input" name="bemerkungen">${esc(a.bemerkungen || '')}</textarea></label>
-        <div class="flex justify-end gap-2 pt-2">
-          <button type="button" class="btn btn-secondary" data-action="modalCancel">Abbrechen</button>
-          <button type="submit" class="btn btn-primary">${isEdit ? 'Aktualisieren' : 'Anlegen'}</button>
-        </div>
       </form>`;
     openModal({ title: isEdit ? `Bearbeiten: ${a.produktname}` : 'Neue Aktion', body, size: 'lg' });
     document.getElementById('aktion-form').addEventListener('submit', e => {
