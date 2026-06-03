@@ -1723,6 +1723,7 @@
   // ============================================================
   // RENDER MAIN
   // ============================================================
+  let lastRenderedRoute = null;
   function render() {
     applyTheme();
 
@@ -1738,6 +1739,11 @@
       };
     }
 
+    // Scroll-Position merken, damit das Anhaken einer Karte (oder ein
+    // sonstiger Re-Render auf derselben Seite) nicht nach oben springt.
+    const prevScroll = window.scrollY;
+    const keepScroll = lastRenderedRoute === state.route;
+
     let content;
     switch (state.route) {
       case 'aktionen': content = renderAktionen(); break;
@@ -1746,6 +1752,11 @@
       default: content = renderDashboard();
     }
     document.getElementById('app').innerHTML = renderShell(content);
+    lastRenderedRoute = state.route;
+
+    if (keepScroll && prevScroll > 0) {
+      window.scrollTo(0, prevScroll);
+    }
 
     if (focusInfo) {
       const inp = document.querySelector(`[data-action="${focusInfo.action}"]`);
