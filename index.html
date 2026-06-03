@@ -159,6 +159,7 @@
     importSearch: '',
     importSort: 'einsendeschluss-asc',
     showHiddenGzg: false,
+    showImportedGzg: false,
     showFilter: false,
     lastSeenGzg: null,
   };
@@ -1164,8 +1165,9 @@
   // RENDER: GZG-LISTE (Import)
   // ============================================================
   function renderImport() {
-    let items = state.gzg.filter(g => !g.importiert);
+    let items = state.showImportedGzg ? [...state.gzg] : state.gzg.filter(g => !g.importiert);
     const hiddenCount = items.filter(g => g.hidden).length;
+    const importedCount = state.gzg.filter(g => g.importiert).length;
     items = items.filter(g => state.showHiddenGzg ? g.hidden : !g.hidden);
     if (state.importSearch) {
       const s = state.importSearch.toLowerCase();
@@ -1227,6 +1229,11 @@
                 ${state.showHiddenGzg ? I.eye : I.eyeOff}
                 <span class="text-xs">${hiddenCount}</span>
               </button>` : ''}
+            ${importedCount > 0 ? `
+              <button class="btn btn-secondary ${state.showImportedGzg ? 'ring-2 ring-brand-500' : ''}" data-action="toggleShowImported" title="${state.showImportedGzg ? 'Importierte ausblenden' : 'Importierte einblenden (für Zusammenfassen)'}">
+                ${I.package}
+                <span class="text-xs">importiert · ${importedCount}</span>
+              </button>` : ''}
           </div>
         </div>
 
@@ -1277,6 +1284,7 @@
                         </div>` : ''}
                       <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs">
                         ${isNewGzg(g) ? `<span class="badge bg-emerald-500 text-white">NEU</span>` : ''}
+                        ${g.importiert ? `<span class="badge bg-slate-400 text-white">importiert</span>` : ''}
                         ${g.hersteller ? `<span class="text-slate-500">${esc(g.hersteller)}</span>` : ''}
                         ${g.cashbackBetrag ? `<span class="font-semibold text-emerald-600 dark:text-emerald-400">${fmtCurrency(g.cashbackBetrag)}</span>` : ''}
                         ${dlBadge}
@@ -1640,7 +1648,7 @@
       else if (a === 'page') setState({ filter: { ...state.filter, page: Math.max(1, state.filter.page + Number(t.dataset.dir)) } });
       else if (a === 'resetFilter') setState({ filter: { ...state.filter, status: '', von: '', bis: '', page: 1 } });
       else if (a === 'toggleAll') {
-        const items = state.gzg.filter(g => !g.importiert)
+        const items = (state.showImportedGzg ? [...state.gzg] : state.gzg.filter(g => !g.importiert))
           .filter(g => state.showHiddenGzg ? g.hidden : !g.hidden)
           .filter(g => {
             if (!state.importSearch) return true;
@@ -1675,6 +1683,7 @@
         });
       }
       else if (a === 'toggleShowHidden') setState({ showHiddenGzg: !state.showHiddenGzg });
+      else if (a === 'toggleShowImported') setState({ showImportedGzg: !state.showImportedGzg, importSelection: [] });
       else if (a === 'toggleAktionspackung') {
         const id = Number(t.dataset.id);
         const target = state.gzg.find(g => g.id === id);
