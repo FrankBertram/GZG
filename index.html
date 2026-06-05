@@ -1785,11 +1785,18 @@
   function render() {
     applyTheme();
 
-    // Fokus + Caret-Position des aktiven Inputs merken, damit Tippen
+    // Fokus + Caret-Position des aktiven Text-Inputs merken, damit Tippen
     // während eines Re-Renders nicht den Fokus verliert.
+    // WICHTIG: Checkbox/Radio NICHT mitfangen — sonst würde querySelector
+    // unten die erste passende Karten-Checkbox fokussieren und der Browser
+    // scrollt zu ihr (= Sprung an den Listenanfang beim Anhaken einer Karte).
     const ae = document.activeElement;
+    const isTextInput = ae && (
+      ae.tagName === 'TEXTAREA' ||
+      (ae.tagName === 'INPUT' && !['checkbox','radio','submit','button','file'].includes(ae.type))
+    );
     let focusInfo = null;
-    if (ae && ae.dataset && ae.dataset.action && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) {
+    if (isTextInput && ae.dataset && ae.dataset.action) {
       focusInfo = {
         action: ae.dataset.action,
         start: ae.selectionStart,
