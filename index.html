@@ -56,8 +56,6 @@
     .dark .card { border-color: #1e293b; background-color: #0f172a; }
     .card.cell-yellow { background-color: #fef9c3; border-color: #fde68a; }
     .dark .card.cell-yellow { background-color: rgba(133,77,14,.28); border-color: rgba(202,138,4,.5); }
-    .card.anteilig { border-color: #dc2626; border-width: 2px; }
-    .dark .card.anteilig { border-color: #ef4444; }
     tr.row-yellow > td { background-color: #fef9c3; }
     tr.row-yellow:hover > td { background-color: #fef08a; }
     .dark tr.row-yellow > td { background-color: rgba(133,77,14,.28); }
@@ -940,6 +938,17 @@
           <nav class="mx-auto max-w-7xl px-2 sm:px-6 pb-2 flex gap-1 overflow-x-auto">
             ${NAV.map(n => `<button class="nav-link ${state.route === n.id ? 'active' : ''}" data-action="navigate" data-route="${n.id}">${I[n.icon]}${n.label}${navBadge(n)}</button>`).join('')}
           </nav>
+          ${state.route === 'import' && state.importSelection.length > 0 ? `
+            <div class="border-t border-slate-200 dark:border-slate-800 bg-brand-50 dark:bg-brand-900/30">
+              <div class="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex items-center gap-2 flex-wrap">
+                <span class="text-sm font-medium">${state.importSelection.length} ausgewählt</span>
+                <button class="btn btn-ghost text-xs py-1 px-2" data-action="clearSelection" title="Auswahl aufheben">${I.x}</button>
+                <div class="ml-auto flex gap-2 flex-wrap">
+                  ${state.importSelection.length >= 2 ? `<button class="btn btn-secondary text-sm py-1.5" data-action="openMerge">Zusammenfassen (${state.importSelection.length})</button>` : ''}
+                  <button class="btn btn-primary text-sm py-1.5" data-action="doImport">${I.download} Importieren (${state.importSelection.length})</button>
+                </div>
+              </div>
+            </div>` : ''}
         </header>
         <main class="mx-auto max-w-7xl w-full flex-1 px-4 sm:px-6 py-6">${content}</main>
         <footer class="border-t border-slate-200 dark:border-slate-800 py-3 text-center text-xs text-slate-500">
@@ -1301,8 +1310,7 @@
                 }
                 const sel = state.importSelection.includes(g.id);
                 const colorClass = g.cellColor === 'yellow' ? 'cell-yellow' : '';
-                const anteiligClass = g.anteilig ? 'anteilig' : '';
-                return `<div class="card p-4 flex flex-col gap-3 transition-shadow hover:shadow-md ${colorClass} ${anteiligClass} ${sel ? 'ring-2 ring-brand-500' : ''} ${g.hidden ? 'opacity-50' : ''}">
+                return `<div class="card p-4 flex flex-col gap-3 transition-shadow hover:shadow-md ${colorClass} ${sel ? 'ring-2 ring-brand-500' : ''} ${g.hidden ? 'opacity-50' : ''}">
                   <div class="flex items-start gap-3">
                     ${logoForGzg(g)}
                     <div class="flex-1 min-w-0">
@@ -1459,6 +1467,8 @@
     const ids = [...state.importSelection];
     const entries = ids.map(id => state.gzg.find(g => g.id === id)).filter(Boolean);
     if (entries.length < 2) { toast('Mindestens 2 Einträge auswählen', 'error'); return; }
+    // Scroll-Position merken, damit nach dem Schließen/Re-Render nicht nach oben gesprungen wird
+    const savedScroll = window.scrollY;
     // Default: importierter Eintrag (falls einer dabei ist), sonst ältester (kleinste ID)
     const defaultCanonical = entries.find(g => g.importiert)?.id ?? entries.reduce((a, b) => a.id < b.id ? a : b).id;
 
@@ -1492,6 +1502,8 @@
       const canonicalId = Number(fd.get('canonical'));
       closeModal();
       mergeGzgEntries(canonicalId, ids);
+      // Nach dem Re-Render wieder an die gemerkte Stelle scrollen
+      window.scrollTo(0, savedScroll);
     });
   }
 
@@ -1712,6 +1724,7 @@
         setState({ importSelection: state.importSelection.includes(id) ? state.importSelection.filter(x => x !== id) : [...state.importSelection, id] });
       }
       else if (a === 'doImport') importGZG(state.importSelection);
+      else if (a === 'clearSelection') setState({ importSelection: [] });
       else if (a === 'openMerge') openMergeDialog();
       else if (a === 'removeAlias') removeGzgAlias(Number(t.dataset.id), t.dataset.alias);
       else if (a === 'previewGzg') openGzgPreview(Number(t.dataset.id));
