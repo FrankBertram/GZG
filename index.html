@@ -101,7 +101,7 @@
   const STATUS_LIST = ['OFFEN', 'EINGEREICHT', 'ERHALTEN', 'ABGELEHNT'];
   const STATUS_LABEL = { OFFEN: 'Offen', EINGEREICHT: 'Eingereicht', ERHALTEN: 'Erhalten', ABGELEHNT: 'Abgelehnt' };
   const STORAGE_KEY = 'gzg_cashback_v2';
-  const APP_VERSION = 'V1.3';
+  const APP_VERSION = 'V1.4';
   const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1wcqckNai9SyRbQLt-pj6FHzGM7sypoET9glyAE05u2E/edit?gid=2093940701';
   const DEFAULT_ANTEILIG_URL = 'https://docs.google.com/spreadsheets/d/1wcqckNai9SyRbQLt-pj6FHzGM7sypoET9glyAE05u2E/edit?gid=1190351795';
 
@@ -159,6 +159,7 @@
     importSelection: [],
     importSearch: '',
     importSort: 'einsendeschluss-asc',
+    importAnteilig: '',
     showHiddenGzg: false,
     showImportedGzg: false,
     showFilter: false,
@@ -1207,6 +1208,10 @@
     const hiddenCount = items.filter(g => g.hidden).length;
     const importedCount = state.gzg.filter(g => g.importiert).length;
     items = items.filter(g => state.showHiddenGzg ? g.hidden : !g.hidden);
+    const anteiligCount = items.filter(g => g.anteilig).length;
+    const vollCount = items.length - anteiligCount;
+    if (state.importAnteilig === 'voll') items = items.filter(g => !g.anteilig);
+    else if (state.importAnteilig === 'teil') items = items.filter(g => g.anteilig);
     if (state.importSearch) {
       const s = state.importSearch.toLowerCase();
       items = items.filter(g =>
@@ -1262,6 +1267,12 @@
             <select class="input w-auto" data-action="importSort">
               ${SORT_OPTIONS.map(([v, l]) => `<option value="${v}" ${state.importSort === v ? 'selected' : ''}>${l}</option>`).join('')}
             </select>
+            <button class="btn btn-secondary ${state.importAnteilig === 'voll' ? 'ring-2 ring-brand-500' : ''}" data-action="setImportAnteilig" data-value="${state.importAnteilig === 'voll' ? '' : 'voll'}" title="Nur Voll-GZG anzeigen">
+              <span class="text-xs">Voll-GZG · ${vollCount}</span>
+            </button>
+            <button class="btn btn-secondary ${state.importAnteilig === 'teil' ? 'ring-2 ring-red-500' : ''}" data-action="setImportAnteilig" data-value="${state.importAnteilig === 'teil' ? '' : 'teil'}" title="Nur Teil-GZG (anteilige Cashbacks) anzeigen">
+              <span class="text-xs">Teil-GZG · ${anteiligCount}</span>
+            </button>
             ${hiddenCount > 0 ? `
               <button class="btn btn-secondary" data-action="toggleShowHidden" title="${state.showHiddenGzg ? 'Ausgeblendete verbergen' : 'Ausgeblendete anzeigen'}">
                 ${state.showHiddenGzg ? I.eye : I.eyeOff}
@@ -1742,6 +1753,7 @@
       }
       else if (a === 'toggleShowHidden') setState({ showHiddenGzg: !state.showHiddenGzg });
       else if (a === 'toggleShowImported') setState({ showImportedGzg: !state.showImportedGzg, importSelection: [] });
+      else if (a === 'setImportAnteilig') setState({ importAnteilig: t.dataset.value || '' });
       else if (a === 'toggleAktionspackung') {
         const id = Number(t.dataset.id);
         const target = state.gzg.find(g => g.id === id);
